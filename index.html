@@ -3625,11 +3625,45 @@ function draw() {
                 const mid = (bandTop + bandBot) / 2;
                 return Math.max(bandTop + 20, Math.min(bandBot - 14, mid));
             }
+            // Helper: draw icon left of text
+            function drawFlag(x, y, type) {
+                ctx.save();
+                ctx.shadowBlur = 0;
+                const w = 18, h = 12, r = x - 4;
+                if (type === 'russia') {
+                    const sh = Math.round(h / 3);
+                    ctx.fillStyle = '#fff';    ctx.fillRect(r - w, y - h/2, w, sh);
+                    ctx.fillStyle = '#0039a6'; ctx.fillRect(r - w, y - h/2 + sh, w, sh);
+                    ctx.fillStyle = '#d52b1e'; ctx.fillRect(r - w, y - h/2 + sh*2, w, h - sh*2);
+                } else if (type === 'china') {
+                    ctx.fillStyle = '#de2910'; ctx.fillRect(r - w, y - h/2, w, h);
+                    ctx.fillStyle = '#ffde00';
+                    ctx.font = 'bold 10px system-ui';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('★', r - w + 2, y + 4);
+                    ctx.textAlign = 'right';
+                } else if (type === 'bot') {
+                    // Simple robot head
+                    const cx = r - w/2, cy = y;
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.fillRect(cx - 7, cy - 6, 14, 12);
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.fillRect(cx - 4, cy - 3, 3, 3);
+                    ctx.fillRect(cx + 1, cy - 3, 3, 3);
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.fillRect(cx - 1, cy - 10, 2, 5);
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.beginPath(); ctx.arc(cx, cy - 10, 2, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+            }
             // Bots (russiaVals → aggVals)
             const botsY = clampCenter(yAgg, yRussia);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('🤖 BOTS', lx, botsY - 7);
+            const botsTw = ctx.measureText('BOTS').width;
+            ctx.fillText('BOTS', lx, botsY - 7);
+            drawFlag(lx - botsTw, botsY - 8, 'bot');
             ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Bots & influence campaign', lx, botsY + 10);
@@ -3637,7 +3671,9 @@ function draw() {
             const russiaY = clampCenter(yRussia, yChina);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('🇷🇺 RUSSIA', lx, russiaY - 7);
+            const ruTw = ctx.measureText('RUSSIA').width;
+            ctx.fillText('RUSSIA', lx, russiaY - 7);
+            drawFlag(lx - ruTw, russiaY - 8, 'russia');
             ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Algorithm Attack', lx, russiaY + 10);
@@ -3645,7 +3681,9 @@ function draw() {
             const chinaY = clampCenter(yChina, yNat);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('🇨🇳 CHINA', lx, chinaY - 7);
+            const cnTw = ctx.measureText('CHINA').width;
+            ctx.fillText('CHINA', lx, chinaY - 7);
+            drawFlag(lx - cnTw, chinaY - 8, 'china');
             ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Algorithmic manipulation', lx, chinaY + 10);
@@ -4989,6 +5027,26 @@ function buildInsightPanel() {
     });
 
     if (allDesires.length === 0) { panel.style.display = 'none'; return; }
+
+    // Filter-aware desire ordering
+    const strip = l => l.replace(/^[\p{Emoji}\p{Emoji_Component}\u200D\uFE0F\u200B]+\s*/u, '');
+    const isYouth = activeFilters.age.has(2); // index 2 = '17-22'
+    const DESIRE_ORDER = isYouth
+        ? [ "I don't want to join IDF",
+            "I want government to pay soldiers fairly",
+            "I want government to draft all Haredim",
+            "I want IDF to open all roles to women",
+            "I want meaningful but noncombat service" ]
+        : [ "I want government to pay soldiers fairly",
+            "I want government to draft all Haredim",
+            "I want IDF to open all roles to women",
+            "I don't want to join IDF",
+            "I want IDF to fund soldier therapy" ];
+    allDesires.sort((a, b) => {
+        const ai = DESIRE_ORDER.indexOf(strip(a.label));
+        const bi = DESIRE_ORDER.indexOf(strip(b.label));
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
 
     panel.style.display = 'flex';
     const top = Math.min(5, allDesires.length);
