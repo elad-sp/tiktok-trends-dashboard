@@ -3268,7 +3268,10 @@ function draw() {
 
     // Compute dynamic Y range from visible data
     if (desireViewMode) {
-        yAxisMin = 0; yAxisMax = 100;
+        yAxisMin = 0;
+        const aggStream = dataStreams[dataStreams.length - 1];
+        const aggMax = aggStream ? Math.max(...aggStream) : 100;
+        yAxisMax = Math.max(100, Math.ceil(aggMax / 25) * 25);
     } else {
         let dMin = Infinity, dMax = -Infinity;
         dataStreams.forEach(stream => {
@@ -3386,33 +3389,6 @@ function draw() {
                 ctx.stroke();
                 ctx.setLineDash([]);
             }
-            // White endpoint dot + value at end of line
-            const endIdx = N - 1;
-            const endX = xs[endIdx], endY = yForValue(aggVals[endIdx]);
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(endX, endY, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            // Show percentage value
-            ctx.font = 'bold 13px system-ui';
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'left';
-            ctx.fillText(Math.round(aggVals[endIdx]) + '%', endX + 10, endY + 4);
-
-            // White endpoint dot at TODAY line
-            const todayEndX = xs[Math.min(TODAY_IDX, N-1)];
-            const todayEndY = yForValue(aggVals[Math.min(TODAY_IDX, N-1)]);
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(todayEndX, todayEndY, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
             ctx.restore();
             // Labels (right side, inside projection zone)
             const lastT = (N - 1) / (TOTAL_POINTS - 1);
