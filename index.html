@@ -3620,11 +3620,11 @@ function draw() {
             const yChina  = yForValue(lastChina);
             const yNat    = yForValue(lastNat);
             const yZero   = yForValue(0);
-            // Clamp label center within band. Icon top ~center-22, subtitle bottom ~center+14
+            // Clamp label center within band. Icon+shadow top ~center-34, subtitle+shadow bottom ~center+26
             function clampCenter(bandTop, bandBot) {
-                const pad = 24; // keep 24px from any boundary line
-                if (bandBot - bandTop < pad * 2) return (bandTop + bandBot) / 2; // too narrow, just center
-                return Math.max(bandTop + pad, Math.min(bandBot - pad, (bandTop + bandBot) / 2));
+                const padTop = 36, padBot = 28;
+                if (bandBot - bandTop < padTop + padBot) return (bandTop + bandBot) / 2;
+                return Math.max(bandTop + padTop, Math.min(bandBot - padBot, (bandTop + bandBot) / 2));
             }
             // Helper: draw icon left of text
             function drawIcon(x, y, type) {
