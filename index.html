@@ -3611,49 +3611,40 @@ function draw() {
             const lx = xs[N - 1] - 10;
             ctx.globalAlpha = 1;
             ctx.textAlign = 'right';
+            // Enable strong dark shadow for all labels
+            ctx.shadowColor = '#000000';
+            ctx.shadowBlur = 8;
             // Bots (russiaVals → aggVals)
             const botsY = yForValue((lastRussia + lastAgg) / 2);
-            ctx.font = 'bold 13px system-ui';
+            ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('🤖 BOTS', lx, botsY - 6);
-            ctx.font = '12px system-ui';
+            ctx.fillText('🤖 BOTS', lx, botsY - 7);
+            ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
-            ctx.fillText('Bots & influence campaign', lx, botsY + 9);
+            ctx.fillText('Bots & influence campaign', lx, botsY + 10);
             // Russia (chinaVals → russiaVals)
             const russiaY = yForValue((lastChina + lastRussia) / 2);
-            ctx.font = 'bold 13px system-ui';
+            ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            const ruText = ' RUSSIA';
-            const ruTw = ctx.measureText(ruText).width;
-            ctx.fillText(ruText, lx, russiaY - 6);
-            const rfx = lx - ruTw - 18, rfy = russiaY - 16, rfw = 16, rfh = 11;
-            ctx.fillStyle = '#fff'; ctx.fillRect(rfx, rfy, rfw, Math.round(rfh/3));
-            ctx.fillStyle = '#0039a6'; ctx.fillRect(rfx, rfy + Math.round(rfh/3), rfw, Math.round(rfh/3));
-            ctx.fillStyle = '#d52b1e'; ctx.fillRect(rfx, rfy + Math.round(rfh/3)*2, rfw, rfh - Math.round(rfh/3)*2);
-            ctx.font = '12px system-ui';
+            ctx.fillText('🇷🇺 RUSSIA', lx, russiaY - 7);
+            ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
-            ctx.fillText('Algorithm Attack', lx, russiaY + 9);
+            ctx.fillText('Algorithm Attack', lx, russiaY + 10);
             // China (natVals → chinaVals)
             const chinaY = yForValue((lastNat + lastChina) / 2);
-            ctx.font = 'bold 13px system-ui';
+            ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            const cnText = ' CHINA';
-            const cnTw = ctx.measureText(cnText).width;
-            ctx.fillText(cnText, lx, chinaY - 6);
-            const cfx = lx - cnTw - 18, cfy = chinaY - 16, cfw = 16, cfh = 11;
-            ctx.fillStyle = '#de2910'; ctx.fillRect(cfx, cfy, cfw, cfh);
-            ctx.fillStyle = '#ffde00'; ctx.font = '9px system-ui';
-            ctx.textAlign = 'left';
-            ctx.fillText('★', cfx + 1, cfy + 9);
-            ctx.textAlign = 'right';
-            ctx.font = '12px system-ui';
+            ctx.fillText('🇨🇳 CHINA', lx, chinaY - 7);
+            ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
-            ctx.fillText('Algorithmic manipulation', lx, chinaY + 9);
+            ctx.fillText('Algorithmic manipulation', lx, chinaY + 10);
             // Natural (0 → natVals)
             const naturalY = yForValue(lastNat / 2);
-            ctx.font = 'bold 13px system-ui';
+            ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('Natural', lx, naturalY + 4);
+            ctx.fillText('Natural', lx, naturalY + 5);
+            // Reset shadow
+            ctx.shadowBlur = 0;
 
             // -- End clip and draw metallic scan line --
             if (deepRevealing) {
