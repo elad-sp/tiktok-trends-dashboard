@@ -3647,8 +3647,8 @@ function draw() {
                 }
                 ctx.restore();
             }
-            // Single-line label clipped to band — shadow blur 4 (won't bleed)
-            function drawBandLabel(bandTop, bandBot, title, iconType) {
+            // Label clipped to band — 2 lines, compact
+            function drawBandLabel(bandTop, bandBot, title, subtitle, iconType) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(0, bandTop, w, bandBot - bandTop);
@@ -3656,41 +3656,23 @@ function draw() {
                 ctx.shadowColor = '#000000';
                 ctx.shadowBlur = 4;
                 const cy = (bandTop + bandBot) / 2;
-                ctx.font = 'bold 14px system-ui';
+                ctx.font = 'bold 13px system-ui';
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'right';
                 const tw = ctx.measureText(title).width;
-                ctx.fillText(title, lx, cy + 5);
-                if (iconType) drawIcon(lx - tw, cy + 4, iconType);
+                ctx.fillText(title, lx, cy - 2);
+                if (iconType) drawIcon(lx - tw, cy - 3, iconType);
+                if (subtitle) {
+                    ctx.font = '10px system-ui';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText(subtitle, lx, cy + 11);
+                }
                 ctx.restore();
             }
-            drawBandLabel(yAgg, yRussia, 'BOTS', 'bot');
-            drawBandLabel(yRussia, yChina, 'RUSSIA', 'russia');
-            drawBandLabel(yChina, yNat, 'CHINA', 'china');
-            drawBandLabel(yNat, yZero, 'Natural', null);
-            // Legend strip below chart
-            ctx.save();
-            ctx.shadowBlur = 0;
-            const legY = bottomY + 18;
-            ctx.font = '11px system-ui';
-            ctx.textAlign = 'left';
-            const legItems = [
-                { color: '#7f1d1d', label: 'Bots & influence campaign' },
-                { color: '#1e3a8a', label: 'Algorithm Attack (Russia)' },
-                { color: '#78350f', label: 'Algorithmic manipulation (China)' },
-                { color: '#0a2033', label: 'Natural' },
-            ];
-            let legX = MARGIN.left;
-            for (const item of legItems) {
-                ctx.fillStyle = item.color;
-                ctx.fillRect(legX, legY - 7, 10, 10);
-                ctx.strokeStyle = '#475569'; ctx.lineWidth = 0.5;
-                ctx.strokeRect(legX, legY - 7, 10, 10);
-                ctx.fillStyle = '#94a3b8';
-                ctx.fillText(item.label, legX + 14, legY + 2);
-                legX += ctx.measureText(item.label).width + 28;
-            }
-            ctx.restore();
+            drawBandLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot');
+            drawBandLabel(yRussia, yChina, 'RUSSIA', 'Algorithm Attack', 'russia');
+            drawBandLabel(yChina, yNat, 'CHINA', 'Algorithmic manipulation', 'china');
+            drawBandLabel(yNat, yZero, 'Natural', null, null);
 
             // -- End clip and draw metallic scan line --
             if (deepRevealing) {
