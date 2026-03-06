@@ -3620,40 +3620,52 @@ function draw() {
             const yChina  = yForValue(lastChina);
             const yNat    = yForValue(lastNat);
             const yZero   = yForValue(0);
-            // Clamp label center within band, with padding for 2 lines (~20px above/below)
+            // Clamp label center within band (top padding 30px for icon+title, bottom 16px for subtitle)
             function clampCenter(bandTop, bandBot) {
                 const mid = (bandTop + bandBot) / 2;
-                return Math.max(bandTop + 20, Math.min(bandBot - 14, mid));
+                return Math.max(bandTop + 30, Math.min(bandBot - 16, mid));
             }
             // Helper: draw icon left of text
-            function drawFlag(x, y, type) {
+            function drawIcon(x, y, type) {
                 ctx.save();
                 ctx.shadowBlur = 0;
-                const w = 18, h = 12, r = x - 4;
+                const r = x - 6;
                 if (type === 'russia') {
-                    const sh = Math.round(h / 3);
+                    const w = 20, h = 13, sh = Math.round(h / 3);
+                    ctx.strokeStyle = '#475569'; ctx.lineWidth = 0.5;
+                    ctx.strokeRect(r - w, y - h/2, w, h);
                     ctx.fillStyle = '#fff';    ctx.fillRect(r - w, y - h/2, w, sh);
                     ctx.fillStyle = '#0039a6'; ctx.fillRect(r - w, y - h/2 + sh, w, sh);
                     ctx.fillStyle = '#d52b1e'; ctx.fillRect(r - w, y - h/2 + sh*2, w, h - sh*2);
                 } else if (type === 'china') {
+                    const w = 20, h = 13;
                     ctx.fillStyle = '#de2910'; ctx.fillRect(r - w, y - h/2, w, h);
+                    ctx.strokeStyle = '#475569'; ctx.lineWidth = 0.5;
+                    ctx.strokeRect(r - w, y - h/2, w, h);
                     ctx.fillStyle = '#ffde00';
-                    ctx.font = 'bold 10px system-ui';
+                    ctx.font = 'bold 11px system-ui';
                     ctx.textAlign = 'left';
                     ctx.fillText('★', r - w + 2, y + 4);
                     ctx.textAlign = 'right';
                 } else if (type === 'bot') {
-                    // Simple robot head
-                    const cx = r - w/2, cy = y;
-                    ctx.fillStyle = '#9ca3af';
-                    ctx.fillRect(cx - 7, cy - 6, 14, 12);
-                    ctx.fillStyle = '#60a5fa';
-                    ctx.fillRect(cx - 4, cy - 3, 3, 3);
-                    ctx.fillRect(cx + 1, cy - 3, 3, 3);
-                    ctx.fillStyle = '#9ca3af';
-                    ctx.fillRect(cx - 1, cy - 10, 2, 5);
-                    ctx.fillStyle = '#60a5fa';
-                    ctx.beginPath(); ctx.arc(cx, cy - 10, 2, 0, Math.PI * 2); ctx.fill();
+                    const cx = r - 10, cy = y;
+                    // Head (rounded)
+                    ctx.fillStyle = '#6b7280';
+                    ctx.beginPath(); ctx.roundRect(cx - 8, cy - 7, 16, 14, 3); ctx.fill();
+                    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.roundRect(cx - 8, cy - 7, 16, 14, 3); ctx.stroke();
+                    // Eyes (glowing)
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath(); ctx.arc(cx - 3, cy - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx + 3, cy - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+                    // Mouth
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.fillRect(cx - 4, cy + 3, 8, 1.5);
+                    // Antenna
+                    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.moveTo(cx, cy - 7); ctx.lineTo(cx, cy - 12); ctx.stroke();
+                    ctx.fillStyle = '#f87171';
+                    ctx.beginPath(); ctx.arc(cx, cy - 12, 2, 0, Math.PI * 2); ctx.fill();
                 }
                 ctx.restore();
             }
@@ -3663,7 +3675,7 @@ function draw() {
             ctx.fillStyle = '#ffffff';
             const botsTw = ctx.measureText('BOTS').width;
             ctx.fillText('BOTS', lx, botsY - 7);
-            drawFlag(lx - botsTw, botsY - 8, 'bot');
+            drawIcon(lx - botsTw, botsY - 8, 'bot');
             ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Bots & influence campaign', lx, botsY + 10);
@@ -3673,7 +3685,7 @@ function draw() {
             ctx.fillStyle = '#ffffff';
             const ruTw = ctx.measureText('RUSSIA').width;
             ctx.fillText('RUSSIA', lx, russiaY - 7);
-            drawFlag(lx - ruTw, russiaY - 8, 'russia');
+            drawIcon(lx - ruTw, russiaY - 8, 'russia');
             ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Algorithm Attack', lx, russiaY + 10);
@@ -3683,7 +3695,7 @@ function draw() {
             ctx.fillStyle = '#ffffff';
             const cnTw = ctx.measureText('CHINA').width;
             ctx.fillText('CHINA', lx, chinaY - 7);
-            drawFlag(lx - cnTw, chinaY - 8, 'china');
+            drawIcon(lx - cnTw, chinaY - 8, 'china');
             ctx.font = '13px system-ui';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Algorithmic manipulation', lx, chinaY + 10);
@@ -4514,7 +4526,7 @@ function drawDesirePie(cx, cy, opinionAtPoint) {
     const labelR = r * 0.55;
     const lblFs = Math.max(10, Math.round(r * 0.13));
     pieCtx.textAlign = 'center';
-    const nameFs = Math.max(8, Math.round(r * 0.09));
+    const nameFs = Math.max(8, lblFs - 2);
     const pctFs = lblFs;
     slices.forEach(({ val, color, label }) => {
         const a = (val / total) * Math.PI * 2;
@@ -4527,7 +4539,7 @@ function drawDesirePie(cx, cy, opinionAtPoint) {
             pieCtx.shadowBlur = 4;
             pieCtx.fillStyle = '#f9fafb';
             // Category name
-            pieCtx.font = nameFs + 'px system-ui';
+            pieCtx.font = 'bold ' + nameFs + 'px system-ui';
             pieCtx.textBaseline = 'bottom';
             pieCtx.fillText(label, lx, ly - 1);
             // Percentage
