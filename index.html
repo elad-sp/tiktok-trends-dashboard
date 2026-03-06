@@ -148,34 +148,108 @@
             margin-bottom: 18px;
         }
 
-        /* ── TABS ── */
-        .tabs {
+        /* ── FILTER CHIPS ── */
+        .filter-bar {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            direction: rtl;
         }
-
-        .tab {
-            background: transparent;
+        .filter-chip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255,255,255,0.1);
-            color: #9ca3af;
-            padding: 6px 18px;
             border-radius: 20px;
+            padding: 5px 14px;
             cursor: pointer;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-family: inherit;
+            color: #9ca3af;
+            transition: all 0.2s;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .filter-chip:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #d1d5db;
+        }
+        .filter-chip.has-value {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+        }
+        .filter-chip.open {
+            border-color: #3b82f6;
+            color: #e0e7ff;
+            background: rgba(59, 130, 246, 0.15);
+        }
+        .filter-chip-label { font-weight: 600; }
+        .filter-chip-sep {
+            margin: 0 6px;
+            color: rgba(255,255,255,0.2);
+            font-weight: 300;
+        }
+        .filter-chip-arrow {
+            margin-right: 6px;
+            color: inherit;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .filter-chip.open .filter-chip-arrow { transform: rotate(180deg); }
+        .filter-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #0f1623;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 10px;
+            padding: 4px 0;
+            min-width: 100%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            z-index: 200;
+            direction: rtl;
+        }
+        .filter-chip.open .filter-dropdown { display: block; }
+        .filter-option {
+            padding: 7px 16px;
+            font-size: 0.8rem;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+            text-align: right;
+        }
+        .filter-option:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #d1d5db;
+        }
+        .filter-option.active {
+            color: #3b82f6;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .filter-reset {
+            display: none;
+            align-items: center;
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.75rem;
+            font-family: inherit;
+            color: #f87171;
+            cursor: pointer;
             transition: all 0.2s;
         }
-
-        .tab:hover { border-color: rgba(59, 130, 246, 0.4); color: #d1d5db; }
-
-        .tab.active {
-            background: #3b82f6;
-            border-color: #3b82f6;
-            color: #fff;
-            font-weight: 600;
+        .filter-reset:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.5);
         }
+        .filter-reset.visible { display: inline-flex; }
 
         /* ── CHART WRAPPER ── */
         .chart-wrapper {
@@ -1557,22 +1631,22 @@ const SERIES = [
                         ]
                       },
                       {
-                        label: "🙎🏻‍♂️ I don't want to join IDF",
+                        label: "🙎🏻‍♂️ I want to donate to combat soldiers",
                         narratives: [
-                          { name: 'Reservists describe endless exhausting deployments',  base: 11, color: '#1e3a8a' },
-                          { name: 'Soldiers share burnout stories on TikTok daily',     base:  9, color: '#2563eb' },
-                          { name: 'Youth see reservists broken and question service',   base:  9, color: '#2563eb' },
-                          { name: 'Veterans share meaningful brotherhood stories',       base:  7, color: '#3b82f6' },
-                          { name: 'IDF offers elite tech and cyber tracks',             base:  5, color: '#38bdf8' },
+                          { name: 'NGO sends 10,000 care packages to fighters',       base: 11, color: '#1e3a8a' },
+                          { name: 'Viral campaign funds fighter families in need',     base: 10, color: '#2563eb' },
+                          { name: 'Restaurant chains offer free meals to soldiers',    base:  9, color: '#2563eb' },
+                          { name: 'TikTok fundraiser raises millions for veterans',    base:  7, color: '#3b82f6' },
+                          { name: 'Community adopts returning reservist families',     base:  5, color: '#38bdf8' },
                         ],
                         opinion: [
-                          { agrees: 45, unsure: 32, disagrees: 23 },
-                          { agrees: 46, unsure: 31, disagrees: 23 },
-                          { agrees: 47, unsure: 30, disagrees: 23 },
-                          { agrees: 48, unsure: 29, disagrees: 23 },
-                          { agrees: 67, unsure: 15, disagrees: 18 },
-                          { agrees: 80, unsure:  5, disagrees: 15 },
-                          { agrees: 96, unsure:  0, disagrees:  4 },
+                          { agrees: 82, unsure: 10, disagrees:  8 },
+                          { agrees: 83, unsure: 10, disagrees:  7 },
+                          { agrees: 84, unsure:  9, disagrees:  7 },
+                          { agrees: 85, unsure:  9, disagrees:  6 },
+                          { agrees: 86, unsure:  8, disagrees:  6 },
+                          { agrees: 87, unsure:  8, disagrees:  5 },
+                          { agrees: 88, unsure:  7, disagrees:  5 },
                         ]
                       },
                       {
@@ -1630,22 +1704,22 @@ const SERIES = [
                         ]
                       },
                       {
-                        label: "🙎🏻‍♂️ I want to donate to combat soldiers",
+                        label: "🙎🏻‍♂️ I don't want to join IDF",
                         narratives: [
-                          { name: 'NGO sends 10,000 care packages to fighters',       base: 11, color: '#1e3a8a' },
-                          { name: 'Viral campaign funds fighter families in need',     base: 10, color: '#2563eb' },
-                          { name: 'Restaurant chains offer free meals to soldiers',    base:  9, color: '#2563eb' },
-                          { name: 'TikTok fundraiser raises millions for veterans',    base:  7, color: '#3b82f6' },
-                          { name: 'Community adopts returning reservist families',     base:  5, color: '#38bdf8' },
+                          { name: 'Reservists describe endless exhausting deployments',  base: 11, color: '#1e3a8a' },
+                          { name: 'Soldiers share burnout stories on TikTok daily',     base:  9, color: '#2563eb' },
+                          { name: 'Youth see reservists broken and question service',   base:  9, color: '#2563eb' },
+                          { name: 'Veterans share meaningful brotherhood stories',       base:  7, color: '#3b82f6' },
+                          { name: 'IDF offers elite tech and cyber tracks',             base:  5, color: '#38bdf8' },
                         ],
                         opinion: [
-                          { agrees: 82, unsure: 10, disagrees:  8 },
-                          { agrees: 83, unsure: 10, disagrees:  7 },
-                          { agrees: 84, unsure:  9, disagrees:  7 },
-                          { agrees: 85, unsure:  9, disagrees:  6 },
-                          { agrees: 86, unsure:  8, disagrees:  6 },
-                          { agrees: 87, unsure:  8, disagrees:  5 },
-                          { agrees: 88, unsure:  7, disagrees:  5 },
+                          { agrees: 45, unsure: 32, disagrees: 23 },
+                          { agrees: 46, unsure: 31, disagrees: 23 },
+                          { agrees: 47, unsure: 30, disagrees: 23 },
+                          { agrees: 48, unsure: 29, disagrees: 23 },
+                          { agrees: 67, unsure: 15, disagrees: 18 },
+                          { agrees: 80, unsure:  5, disagrees: 15 },
+                          { agrees: 96, unsure:  0, disagrees:  4 },
                         ]
                       },
                       {
@@ -3271,7 +3345,9 @@ function draw() {
         yAxisMin = 0;
         const aggStream = dataStreams[dataStreams.length - 1];
         const aggMax = aggStream ? Math.max(...aggStream) : 100;
-        yAxisMax = Math.max(100, Math.ceil(aggMax / 25) * 25);
+        // Account for bots layer (18% above agg at end)
+        const botsMax = aggMax * 1.18;
+        yAxisMax = Math.max(100, Math.ceil(botsMax / 25) * 25);
     } else {
         let dMin = Infinity, dMax = -Infinity;
         dataStreams.forEach(stream => {
@@ -3317,7 +3393,7 @@ function draw() {
         const aggSi = activeDesire.narratives.length;
         const N = Math.min(VISIBLE_POINTS, dataStreams[aggSi]?.length || 0);
         if (N > 1) {
-            const xs = [], aggVals = [], natVals = [], chinaVals = [];
+            const xs = [], aggVals = [], natVals = [], chinaVals = [], botsVals = [];
             for (let i = 0; i < N; i++) {
                 const v = dataStreams[aggSi][i];
                 const t = i / (TOTAL_POINTS - 1);
@@ -3325,6 +3401,7 @@ function draw() {
                 aggVals.push(v);
                 natVals.push(v * (0.9 - 0.55 * t));
                 chinaVals.push(v * (1 - 0.42 * t));
+                botsVals.push(v * (1 + 0.18 * t));
             }
             function fillBand(xArr, bot, top, color, alpha) {
                 ctx.save();
@@ -3352,6 +3429,7 @@ function draw() {
                 fillBand(xS, zeros.slice(s0,e0),       natVals.slice(s0,e0),   '#0a2033', alpha);
                 fillBand(xS, natVals.slice(s0,e0),     chinaVals.slice(s0,e0), '#78350f', alpha);
                 fillBand(xS, chinaVals.slice(s0,e0),   aggVals.slice(s0,e0),   '#1e3a8a', alpha);
+                fillBand(xS, aggVals.slice(s0,e0),     botsVals.slice(s0,e0),  '#7f1d1d', alpha);
             }
             // China boundary dashed line
             ctx.save();
@@ -3363,6 +3441,20 @@ function draw() {
             for (let i = 0; i < N; i++) {
                 if (i === 0) ctx.moveTo(xs[i], yForValue(chinaVals[i]));
                 else ctx.lineTo(xs[i], yForValue(chinaVals[i]));
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+            // Bots boundary dashed line (red)
+            ctx.save();
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 4]);
+            ctx.globalAlpha = 0.85;
+            ctx.beginPath();
+            for (let i = 0; i < N; i++) {
+                if (i === 0) ctx.moveTo(xs[i], yForValue(botsVals[i]));
+                else ctx.lineTo(xs[i], yForValue(botsVals[i]));
             }
             ctx.stroke();
             ctx.setLineDash([]);
@@ -3430,6 +3522,19 @@ function draw() {
             ctx.font = '11px system-ui';
             ctx.fillStyle = '#fde68a';
             ctx.fillText('Algorithmic manipulation', lx, chinaY + 8);
+            // Bots & influence campaign
+            const lastBots = aggVals[N - 1] * (1 + 0.18 * lastT);
+            const botsY = yForValue((lastAgg + lastBots) / 2);
+            ctx.font = '16px system-ui';
+            ctx.fillStyle = '#fca5a5';
+            const botIconX = lx - ctx.measureText('BOTS').width - 22;
+            ctx.fillText('🤖', botIconX, botsY + 1);
+            ctx.font = 'bold 12px system-ui';
+            ctx.fillStyle = '#fca5a5';
+            ctx.fillText('BOTS', lx, botsY - 6);
+            ctx.font = '11px system-ui';
+            ctx.fillStyle = '#fca5a5';
+            ctx.fillText('Bots & influence campaign', lx, botsY + 8);
             // Natural
             const naturalY = yForValue(lastNat / 2);
             ctx.font = 'bold 12px system-ui';
