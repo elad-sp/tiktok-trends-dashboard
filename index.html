@@ -606,14 +606,7 @@
     <!-- CONTENT -->
     <div class="content">
         <h1 class="page-title" id="pageTitle">TikTok Trends</h1>
-        <div class="tabs">
-            <button class="tab active" onclick="setScenario(this,0)">All</button>
-            <button class="tab" onclick="setScenario(this,1)">Arabs</button>
-            <button class="tab" onclick="setScenario(this,2)">Pre-Draft Youth</button>
-            <button class="tab" onclick="setScenario(this,3)">Ultra-Orthodox</button>
-            <button class="tab" onclick="setScenario(this,4)">High Income</button>
-            <button class="tab" onclick="setScenario(this,5)">Students</button>
-        </div>
+        <div class="filter-bar" id="filterBar"></div>
 
         <div class="chart-wrapper">
             <div class="left-col" id="leftCol">
@@ -2611,14 +2604,92 @@ const SERIES = [
     ]},
 ];
 
-const SCENARIOS = [
-    { label: 'All',             seeds: [38, 26, 21,  9,  6] },
-    { label: 'Arabs',           seeds: [40, 24, 21,  9,  6] },
-    { label: 'Pre-Draft Youth', seeds: [36, 28, 21,  9,  6] },
-    { label: 'Ultra-Orthodox',  seeds: [35, 26, 21, 11,  7] },
-    { label: 'High Income',     seeds: [37, 27, 21,  9,  6] },
-    { label: 'Students',        seeds: [35, 26, 21, 12,  6] },
+// ==================== DEMOGRAPHIC FILTERS ====================
+const BASE_SEEDS = [38, 26, 21, 9, 6];
+
+const FILTERS = [
+    {
+        key: 'age', label: 'גיל',
+        options: ['הכל', '13-17', '18-22', '23-30', '31-45', '46+'],
+        deltas: {
+            '13-17': [+6, -3, -4, +1, +0],
+            '18-22': [+4, -1, -3, +1, -1],
+            '23-30': [-2, +2, +1, -1, +0],
+            '31-45': [-5, +3, +3, -1, +0],
+            '46+':   [-7, +4, +5, -1, -1],
+        }
+    },
+    {
+        key: 'gender', label: 'מגדר',
+        options: ['הכל', 'זכר', 'נקבה'],
+        deltas: {
+            'זכר':  [+1, -2, +2, -1, +0],
+            'נקבה': [-1, +3, -2, +1, -1],
+        }
+    },
+    {
+        key: 'origin', label: 'מוצא',
+        options: ['הכל', 'יהודי', 'ערבי', 'דרוזי', 'בדואי'],
+        deltas: {
+            'יהודי': [+0, +0, +0, +0, +0],
+            'ערבי':  [+6, -2, -5, +1, +0],
+            'דרוזי': [+3, -1, -2, +0, +0],
+            'בדואי': [+5, -2, -4, +1, +0],
+        }
+    },
+    {
+        key: 'religious', label: 'סגנון דתי',
+        options: ['הכל', 'חילוני', 'מסורתי', 'דתי', 'חרדי'],
+        deltas: {
+            'חילוני':  [+2, +1, -2, -1, +0],
+            'מסורתי': [+1, +0, +0, +0, -1],
+            'דתי':     [-2, -1, +2, +1, +0],
+            'חרדי':    [-3, +0, -3, +5, +1],
+        }
+    },
+    {
+        key: 'income', label: 'הכנסה',
+        options: ['הכל', 'עד 5K', '5-10K', '10-15K', '15-25K', '25K+'],
+        deltas: {
+            'עד 5K':  [+3, -2, +1, -1, -1],
+            '5-10K':  [+1, -1, +1, +0, -1],
+            '10-15K': [-1, +1, +0, +0, +0],
+            '15-25K': [-2, +2, -1, +1, +0],
+            '25K+':   [-3, +3, -1, +1, +0],
+        }
+    },
+    {
+        key: 'education', label: 'השכלה',
+        options: ['הכל', 'תיכון', 'BA', 'MA+'],
+        deltas: {
+            'תיכון': [+3, -1, -2, +0, +0],
+            'BA':     [-1, +1, +0, +0, +0],
+            'MA+':    [-3, +1, +1, +1, +0],
+        }
+    },
 ];
+
+const activeFilters = { age: 0, gender: 0, origin: 0, religious: 0, income: 0, education: 0 };
+
+function computeFilteredSeeds() {
+    const seeds = [...BASE_SEEDS];
+    for (const filter of FILTERS) {
+        const idx = activeFilters[filter.key];
+        if (idx === 0) continue;
+        const deltas = filter.deltas[filter.options[idx]];
+        for (let i = 0; i < seeds.length; i++) seeds[i] += deltas[i];
+    }
+    const clamped = seeds.map(s => Math.max(1, s));
+    const total = clamped.reduce((a, b) => a + b, 0);
+    return clamped.map(s => Math.round(s * 100 / total));
+}
+
+function getFilterLabel() {
+    const active = FILTERS
+        .filter(f => activeFilters[f.key] !== 0)
+        .map(f => f.options[activeFilters[f.key]]);
+    return active.length === 0 ? null : active.join(', ');
+}
 
 // ── Continuous time-range slider helpers ──
 function sliderToDays(val) {
@@ -2666,7 +2737,6 @@ const PIE_HOLE   = 0.52;
 const SERIES_COLORS = ['#f59e0b', '#3b82f6', '#ec4899', '#06b6d4', '#a855f7', '#facc15', '#8b5cf6', '#2dd4bf', '#f97316', '#38bdf8'];
 
 // ==================== STATE ====================
-let currentScenario = 0;
 let dataStreams = [];
 let dataColors  = []; // computed per-series color (blue=rising, yellow=falling)
 let offset = 0;
@@ -3142,7 +3212,7 @@ function generateData() {
     const active = getActiveSeries();
     const leaf = isLeafLevel();
     const seeds = drilldownPath.length === 0
-        ? SCENARIOS[currentScenario].seeds
+        ? computeFilteredSeeds()
         : active.map(s => s.base);
 
     const SPREAD = [-2.5, -1.2, 0, 1.2, 2.5];
@@ -3342,12 +3412,7 @@ function draw() {
 
     // Compute dynamic Y range from visible data
     if (desireViewMode) {
-        yAxisMin = 0;
-        const aggStream = dataStreams[dataStreams.length - 1];
-        const aggMax = aggStream ? Math.max(...aggStream) : 100;
-        // Account for bots layer (18% above agg at end)
-        const botsMax = aggMax * 1.18;
-        yAxisMax = Math.max(100, Math.ceil(botsMax / 25) * 25);
+        yAxisMin = 0; yAxisMax = 100;
     } else {
         let dMin = Infinity, dMax = -Infinity;
         dataStreams.forEach(stream => {
@@ -3393,15 +3458,17 @@ function draw() {
         const aggSi = activeDesire.narratives.length;
         const N = Math.min(VISIBLE_POINTS, dataStreams[aggSi]?.length || 0);
         if (N > 1) {
-            const xs = [], aggVals = [], natVals = [], chinaVals = [], botsVals = [];
+            const xs = [], aggVals = [], natVals = [], chinaVals = [], russiaVals = [];
             for (let i = 0; i < N; i++) {
                 const v = dataStreams[aggSi][i];
                 const t = i / (TOTAL_POINTS - 1);
                 xs.push(xForIndex(i));
                 aggVals.push(v);
-                natVals.push(v * (0.9 - 0.55 * t));
-                chinaVals.push(v * (1 - 0.42 * t));
-                botsVals.push(v * (1 + 0.18 * t));
+                // Layers split WITHIN aggVals: Natural < China < Russia < Bots = aggVals
+                natVals.push(v * (0.35 - 0.20 * t));
+                chinaVals.push(v * (0.55 - 0.15 * t));
+                russiaVals.push(v * (0.82 - 0.10 * t));
+                // botsVals = aggVals (top layer goes to the white line)
             }
             function fillBand(xArr, bot, top, color, alpha) {
                 ctx.save();
@@ -3426,10 +3493,10 @@ function draw() {
                 if (e0 - s0 < 2) continue;
                 const alpha = phase === 0 ? 0.8 : 0.3;
                 const xS = xs.slice(s0, e0);
-                fillBand(xS, zeros.slice(s0,e0),       natVals.slice(s0,e0),   '#0a2033', alpha);
-                fillBand(xS, natVals.slice(s0,e0),     chinaVals.slice(s0,e0), '#78350f', alpha);
-                fillBand(xS, chinaVals.slice(s0,e0),   aggVals.slice(s0,e0),   '#1e3a8a', alpha);
-                fillBand(xS, aggVals.slice(s0,e0),     botsVals.slice(s0,e0),  '#7f1d1d', alpha);
+                fillBand(xS, zeros.slice(s0,e0),         natVals.slice(s0,e0),    '#0a2033', alpha);  // Natural
+                fillBand(xS, natVals.slice(s0,e0),      chinaVals.slice(s0,e0),  '#78350f', alpha);  // China
+                fillBand(xS, chinaVals.slice(s0,e0),    russiaVals.slice(s0,e0), '#1e3a8a', alpha);  // Russia
+                fillBand(xS, russiaVals.slice(s0,e0),   aggVals.slice(s0,e0),    '#7f1d1d', alpha);  // Bots
             }
             // China boundary dashed line
             ctx.save();
@@ -3445,16 +3512,16 @@ function draw() {
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.restore();
-            // Bots boundary dashed line (red)
+            // Russia boundary dashed line
             ctx.save();
-            ctx.strokeStyle = '#ef4444';
+            ctx.strokeStyle = '#93c5fd';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([5, 4]);
-            ctx.globalAlpha = 0.85;
+            ctx.globalAlpha = 0.6;
             ctx.beginPath();
             for (let i = 0; i < N; i++) {
-                if (i === 0) ctx.moveTo(xs[i], yForValue(botsVals[i]));
-                else ctx.lineTo(xs[i], yForValue(botsVals[i]));
+                if (i === 0) ctx.moveTo(xs[i], yForValue(russiaVals[i]));
+                else ctx.lineTo(xs[i], yForValue(russiaVals[i]));
             }
             ctx.stroke();
             ctx.setLineDash([]);
@@ -3484,20 +3551,30 @@ function draw() {
             ctx.restore();
             // Labels (right side, inside projection zone)
             const lastT = (N - 1) / (TOTAL_POINTS - 1);
-            const lastAgg   = aggVals[N - 1];
-            const lastNat   = lastAgg * (0.9 - 0.55 * lastT);
-            const lastChina = lastAgg * (1 - 0.42 * lastT);
+            const lastAgg     = aggVals[N - 1];
+            const lastNat     = natVals[N - 1];
+            const lastChina   = chinaVals[N - 1];
+            const lastRussia  = russiaVals[N - 1];
             const lx = xs[N - 1] - 10;
             ctx.globalAlpha = 1;
             ctx.textAlign = 'right';
-            // Russia
-            const russiaY = yForValue((lastChina + lastAgg) / 2);
+            // Bots (russiaVals → aggVals)
+            const botsY = yForValue((lastRussia + lastAgg) / 2);
+            ctx.font = '16px system-ui';
+            ctx.fillStyle = '#fca5a5';
+            ctx.fillText('🤖', lx - ctx.measureText('BOTS').width - 22, botsY + 1);
+            ctx.font = 'bold 12px system-ui';
+            ctx.fillStyle = '#fca5a5';
+            ctx.fillText('BOTS', lx, botsY - 6);
+            ctx.font = '11px system-ui';
+            ctx.fillText('Bots & influence campaign', lx, botsY + 8);
+            // Russia (chinaVals → russiaVals)
+            const russiaY = yForValue((lastChina + lastRussia) / 2);
             ctx.font = 'bold 12px system-ui';
             ctx.fillStyle = '#93c5fd';
             const ruText = ' RUSSIA';
             const ruTw = ctx.measureText(ruText).width;
             ctx.fillText(ruText, lx, russiaY - 6);
-            // Draw Russia flag (white/blue/red stripes)
             const rfx = lx - ruTw - 18, rfy = russiaY - 15, rfw = 16, rfh = 11;
             ctx.fillStyle = '#fff'; ctx.fillRect(rfx, rfy, rfw, Math.round(rfh/3));
             ctx.fillStyle = '#0039a6'; ctx.fillRect(rfx, rfy + Math.round(rfh/3), rfw, Math.round(rfh/3));
@@ -3505,14 +3582,13 @@ function draw() {
             ctx.font = '11px system-ui';
             ctx.fillStyle = '#bfdbfe';
             ctx.fillText('Algorithm Attack', lx, russiaY + 8);
-            // China
+            // China (natVals → chinaVals)
             const chinaY = yForValue((lastNat + lastChina) / 2);
             ctx.font = 'bold 12px system-ui';
             ctx.fillStyle = '#fbbf24';
             const cnText = ' CHINA';
             const cnTw = ctx.measureText(cnText).width;
             ctx.fillText(cnText, lx, chinaY - 6);
-            // Draw China flag (red bg + yellow star)
             const cfx = lx - cnTw - 18, cfy = chinaY - 15, cfw = 16, cfh = 11;
             ctx.fillStyle = '#de2910'; ctx.fillRect(cfx, cfy, cfw, cfh);
             ctx.fillStyle = '#ffde00'; ctx.font = '9px system-ui';
@@ -3522,20 +3598,7 @@ function draw() {
             ctx.font = '11px system-ui';
             ctx.fillStyle = '#fde68a';
             ctx.fillText('Algorithmic manipulation', lx, chinaY + 8);
-            // Bots & influence campaign
-            const lastBots = aggVals[N - 1] * (1 + 0.18 * lastT);
-            const botsY = yForValue((lastAgg + lastBots) / 2);
-            ctx.font = '16px system-ui';
-            ctx.fillStyle = '#fca5a5';
-            const botIconX = lx - ctx.measureText('BOTS').width - 22;
-            ctx.fillText('🤖', botIconX, botsY + 1);
-            ctx.font = 'bold 12px system-ui';
-            ctx.fillStyle = '#fca5a5';
-            ctx.fillText('BOTS', lx, botsY - 6);
-            ctx.font = '11px system-ui';
-            ctx.fillStyle = '#fca5a5';
-            ctx.fillText('Bots & influence campaign', lx, botsY + 8);
-            // Natural
+            // Natural (0 → natVals)
             const naturalY = yForValue(lastNat / 2);
             ctx.font = 'bold 12px system-ui';
             ctx.fillStyle = '#94a3b8';
@@ -4765,9 +4828,9 @@ function buildLegend() {
         }
         document.getElementById('pageTitle').textContent = 'TikTok Trends: ' + parts[parts.length - 1];
     } else {
-        const scenario = SCENARIOS[currentScenario].label;
+        const filterLabel = getFilterLabel();
         document.getElementById('pageTitle').textContent =
-            scenario === 'All' ? 'TikTok Trends' : scenario + ' — Content Distribution';
+            filterLabel ? filterLabel + ' — Content Distribution' : 'TikTok Trends';
     }
     buildInsightPanel();
 }
@@ -4929,11 +4992,70 @@ function onSliderInput() {
     }, 70);
 }
 
-// ==================== TABS ====================
-function setScenario(btn, idx) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    currentScenario = idx;
+// ==================== FILTER BAR ====================
+function renderFilterBar() {
+    const bar = document.getElementById('filterBar');
+    bar.innerHTML = '';
+    FILTERS.forEach(filter => {
+        const chip = document.createElement('div');
+        chip.className = 'filter-chip';
+        chip.dataset.filter = filter.key;
+        const selectedIdx = activeFilters[filter.key];
+        const selectedLabel = filter.options[selectedIdx];
+        if (selectedIdx !== 0) chip.classList.add('has-value');
+        chip.innerHTML =
+            `<span class="filter-chip-label">${filter.label}</span>` +
+            `<span class="filter-chip-sep">|</span>` +
+            `<span class="filter-chip-value">${selectedLabel}</span>` +
+            `<svg class="filter-chip-arrow" viewBox="0 0 10 6" width="10" height="6">` +
+                `<path d="M1 1l4 4 4-4" stroke="currentColor" fill="none" stroke-width="1.5"/>` +
+            `</svg>` +
+            `<div class="filter-dropdown">` +
+                filter.options.map((opt, i) =>
+                    `<div class="filter-option${i === selectedIdx ? ' active' : ''}" data-idx="${i}">${opt}</div>`
+                ).join('') +
+            `</div>`;
+        chip.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasOpen = chip.classList.contains('open');
+            closeAllDropdowns();
+            if (!wasOpen) chip.classList.add('open');
+        });
+        chip.querySelectorAll('.filter-option').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                activeFilters[filter.key] = parseInt(opt.dataset.idx);
+                closeAllDropdowns();
+                renderFilterBar();
+                applyFilters();
+            });
+        });
+        bar.appendChild(chip);
+    });
+    const anyActive = FILTERS.some(f => activeFilters[f.key] !== 0);
+    const reset = document.createElement('button');
+    reset.className = 'filter-reset' + (anyActive ? ' visible' : '');
+    reset.textContent = 'איפוס';
+    reset.addEventListener('click', (e) => {
+        e.stopPropagation();
+        for (const f of FILTERS) activeFilters[f.key] = 0;
+        renderFilterBar();
+        applyFilters();
+    });
+    bar.appendChild(reset);
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.filter-chip.open').forEach(c => c.classList.remove('open'));
+}
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.filter-chip')) closeAllDropdowns();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAllDropdowns();
+});
+
+function applyFilters() {
     generateData();
     buildLegend();
     draw();
@@ -5028,6 +5150,7 @@ document.getElementById('deepAnalysisBtn').addEventListener('click', () => {
 });
 updateSliderTrack();
 
+renderFilterBar();
 resize();
 generateData();
 buildLegend();
