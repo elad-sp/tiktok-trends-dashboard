@@ -3611,91 +3611,86 @@ function draw() {
             const lx = xs[N - 1] - 10;
             ctx.globalAlpha = 1;
             ctx.textAlign = 'right';
-            // Enable strong dark shadow for all labels
-            ctx.shadowColor = '#000000';
-            ctx.shadowBlur = 12;
-            // Band boundaries in pixels (top = smaller Y, bottom = larger Y)
+            // Band boundaries in pixels
             const yAgg    = yForValue(lastAgg);
             const yRussia = yForValue(lastRussia);
             const yChina  = yForValue(lastChina);
             const yNat    = yForValue(lastNat);
             const yZero   = yForValue(0);
-            // Clamp label center within band. Icon+shadow top ~center-34, subtitle+shadow bottom ~center+26
-            function clampCenter(bandTop, bandBot) {
-                const padTop = 36, padBot = 28;
-                if (bandBot - bandTop < padTop + padBot) return (bandTop + bandBot) / 2;
-                return Math.max(bandTop + padTop, Math.min(bandBot - padBot, (bandTop + bandBot) / 2));
-            }
-            // Helper: draw icon left of text
+            // Helper: draw flag/bot icon
             function drawIcon(x, y, type) {
                 ctx.save();
                 ctx.shadowBlur = 0;
                 const r = x - 6;
                 if (type === 'russia') {
-                    const w = 20, h = 13, sh = Math.round(h / 3);
-                    ctx.strokeStyle = '#475569'; ctx.lineWidth = 0.5;
-                    ctx.strokeRect(r - w, y - h/2, w, h);
-                    ctx.fillStyle = '#fff';    ctx.fillRect(r - w, y - h/2, w, sh);
-                    ctx.fillStyle = '#0039a6'; ctx.fillRect(r - w, y - h/2 + sh, w, sh);
-                    ctx.fillStyle = '#d52b1e'; ctx.fillRect(r - w, y - h/2 + sh*2, w, h - sh*2);
+                    const fw = 18, fh = 11, sh = Math.round(fh / 3);
+                    ctx.fillStyle = '#fff';    ctx.fillRect(r - fw, y - fh/2, fw, sh);
+                    ctx.fillStyle = '#0039a6'; ctx.fillRect(r - fw, y - fh/2 + sh, fw, sh);
+                    ctx.fillStyle = '#d52b1e'; ctx.fillRect(r - fw, y - fh/2 + sh*2, fw, fh - sh*2);
                 } else if (type === 'china') {
-                    const w = 20, h = 13;
-                    ctx.fillStyle = '#de2910'; ctx.fillRect(r - w, y - h/2, w, h);
-                    ctx.strokeStyle = '#475569'; ctx.lineWidth = 0.5;
-                    ctx.strokeRect(r - w, y - h/2, w, h);
-                    ctx.fillStyle = '#ffde00';
-                    ctx.font = 'bold 11px system-ui';
-                    ctx.textAlign = 'left';
-                    ctx.fillText('★', r - w + 2, y + 4);
-                    ctx.textAlign = 'right';
+                    const fw = 18, fh = 11;
+                    ctx.fillStyle = '#de2910'; ctx.fillRect(r - fw, y - fh/2, fw, fh);
+                    ctx.fillStyle = '#ffde00'; ctx.font = 'bold 10px system-ui';
+                    ctx.textAlign = 'left'; ctx.fillText('★', r - fw + 2, y + 4); ctx.textAlign = 'right';
                 } else if (type === 'bot') {
-                    const cx = r - 10, cy = y;
-                    // Head (rounded)
+                    const cx = r - 9, cy = y;
                     ctx.fillStyle = '#6b7280';
-                    ctx.beginPath(); ctx.roundRect(cx - 8, cy - 7, 16, 14, 3); ctx.fill();
-                    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1;
-                    ctx.beginPath(); ctx.roundRect(cx - 8, cy - 7, 16, 14, 3); ctx.stroke();
-                    // Eyes (glowing)
+                    ctx.beginPath(); ctx.roundRect(cx - 7, cy - 6, 14, 12, 2); ctx.fill();
                     ctx.fillStyle = '#38bdf8';
-                    ctx.beginPath(); ctx.arc(cx - 3, cy - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(cx + 3, cy - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-                    // Mouth
-                    ctx.fillStyle = '#38bdf8';
-                    ctx.fillRect(cx - 4, cy + 3, 8, 1.5);
-                    // Antenna
+                    ctx.beginPath(); ctx.arc(cx - 3, cy - 1, 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx + 3, cy - 1, 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillRect(cx - 3, cy + 2, 6, 1.5);
                     ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1.5;
-                    ctx.beginPath(); ctx.moveTo(cx, cy - 7); ctx.lineTo(cx, cy - 12); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx, cy - 10); ctx.stroke();
                     ctx.fillStyle = '#f87171';
-                    ctx.beginPath(); ctx.arc(cx, cy - 12, 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx, cy - 10, 1.5, 0, Math.PI * 2); ctx.fill();
                 }
                 ctx.restore();
             }
-            // Draw label clipped to its band
-            function drawBandLabel(bandTop, bandBot, title, subtitle, iconType) {
+            // Single-line label clipped to band — shadow blur 4 (won't bleed)
+            function drawBandLabel(bandTop, bandBot, title, iconType) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(0, bandTop, w, bandBot - bandTop);
                 ctx.clip();
                 ctx.shadowColor = '#000000';
-                ctx.shadowBlur = 12;
+                ctx.shadowBlur = 4;
                 const cy = (bandTop + bandBot) / 2;
-                ctx.font = 'bold 15px system-ui';
+                ctx.font = 'bold 14px system-ui';
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'right';
                 const tw = ctx.measureText(title).width;
-                ctx.fillText(title, lx, cy - 5);
-                if (iconType) drawIcon(lx - tw, cy - 6, iconType);
-                if (subtitle) {
-                    ctx.font = '13px system-ui';
-                    ctx.fillStyle = '#cbd5e1';
-                    ctx.fillText(subtitle, lx, cy + 12);
-                }
+                ctx.fillText(title, lx, cy + 5);
+                if (iconType) drawIcon(lx - tw, cy + 4, iconType);
                 ctx.restore();
             }
-            drawBandLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot');
-            drawBandLabel(yRussia, yChina, 'RUSSIA', 'Algorithm Attack', 'russia');
-            drawBandLabel(yChina, yNat, 'CHINA', 'Algorithmic manipulation', 'china');
-            drawBandLabel(yNat, yZero, 'Natural', null, null);
+            drawBandLabel(yAgg, yRussia, 'BOTS', 'bot');
+            drawBandLabel(yRussia, yChina, 'RUSSIA', 'russia');
+            drawBandLabel(yChina, yNat, 'CHINA', 'china');
+            drawBandLabel(yNat, yZero, 'Natural', null);
+            // Legend strip below chart
+            ctx.save();
+            ctx.shadowBlur = 0;
+            const legY = bottomY + 18;
+            ctx.font = '11px system-ui';
+            ctx.textAlign = 'left';
+            const legItems = [
+                { color: '#7f1d1d', label: 'Bots & influence campaign' },
+                { color: '#1e3a8a', label: 'Algorithm Attack (Russia)' },
+                { color: '#78350f', label: 'Algorithmic manipulation (China)' },
+                { color: '#0a2033', label: 'Natural' },
+            ];
+            let legX = MARGIN.left;
+            for (const item of legItems) {
+                ctx.fillStyle = item.color;
+                ctx.fillRect(legX, legY - 7, 10, 10);
+                ctx.strokeStyle = '#475569'; ctx.lineWidth = 0.5;
+                ctx.strokeRect(legX, legY - 7, 10, 10);
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText(item.label, legX + 14, legY + 2);
+                legX += ctx.measureText(item.label).width + 28;
+            }
+            ctx.restore();
 
             // -- End clip and draw metallic scan line --
             if (deepRevealing) {
