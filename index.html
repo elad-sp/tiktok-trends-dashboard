@@ -3614,8 +3614,19 @@ function draw() {
             // Enable strong dark shadow for all labels
             ctx.shadowColor = '#000000';
             ctx.shadowBlur = 12;
+            // Band boundaries in pixels (top = smaller Y, bottom = larger Y)
+            const yAgg    = yForValue(lastAgg);
+            const yRussia = yForValue(lastRussia);
+            const yChina  = yForValue(lastChina);
+            const yNat    = yForValue(lastNat);
+            const yZero   = yForValue(0);
+            // Clamp label center within band, with padding for 2 lines (~20px above/below)
+            function clampCenter(bandTop, bandBot) {
+                const mid = (bandTop + bandBot) / 2;
+                return Math.max(bandTop + 20, Math.min(bandBot - 14, mid));
+            }
             // Bots (russiaVals → aggVals)
-            const botsY = yForValue((lastRussia + lastAgg) / 2);
+            const botsY = clampCenter(yAgg, yRussia);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('🤖 BOTS', lx, botsY - 7);
@@ -3623,7 +3634,7 @@ function draw() {
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Bots & influence campaign', lx, botsY + 10);
             // Russia (chinaVals → russiaVals)
-            const russiaY = yForValue((lastChina + lastRussia) / 2);
+            const russiaY = clampCenter(yRussia, yChina);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('🇷🇺 RUSSIA', lx, russiaY - 7);
@@ -3631,7 +3642,7 @@ function draw() {
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Algorithm Attack', lx, russiaY + 10);
             // China (natVals → chinaVals)
-            const chinaY = yForValue((lastNat + lastChina) / 2);
+            const chinaY = clampCenter(yChina, yNat);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('🇨🇳 CHINA', lx, chinaY - 7);
@@ -3639,7 +3650,7 @@ function draw() {
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('Algorithmic manipulation', lx, chinaY + 10);
             // Natural (0 → natVals)
-            const naturalY = yForValue(lastNat / 2);
+            const naturalY = clampCenter(yNat, yZero);
             ctx.font = 'bold 15px system-ui';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('Natural', lx, naturalY + 5);
