@@ -3433,7 +3433,7 @@ function addDataPoint() {
 }
 
 // ==================== CHART GEOMETRY ====================
-const MARGIN = { top: 10, right: 30, bottom: 40, left: 45 };
+const MARGIN = { top: 10, right: 190, bottom: 40, left: 45 };
 
 function chartW() { return (canvas.width / (window.devicePixelRatio || 1)) - MARGIN.left - MARGIN.right; }
 function chartH() { return (canvas.height / (window.devicePixelRatio || 1)) - MARGIN.top - MARGIN.bottom; }
@@ -3602,38 +3602,35 @@ function draw() {
                 ctx.setLineDash([]);
             }
             ctx.restore();
-            // Labels (right side, inside projection zone)
-            const lastT = (N - 1) / (TOTAL_POINTS - 1);
+            // --- Right-margin labels ---
             const lastAgg     = aggVals[N - 1];
             const lastNat     = natVals[N - 1];
             const lastChina   = chinaVals[N - 1];
             const lastRussia  = russiaVals[N - 1];
-            const lx = xs[N - 1] - 10;
             ctx.globalAlpha = 1;
-            ctx.textAlign = 'right';
             // Band boundaries in pixels
             const yAgg    = yForValue(lastAgg);
             const yRussia = yForValue(lastRussia);
             const yChina  = yForValue(lastChina);
             const yNat    = yForValue(lastNat);
             const yZero   = yForValue(0);
-            // Helper: draw flag/bot icon
-            function drawIcon(x, y, type) {
+            const chartRight = w - MARGIN.right;
+            // Helper: draw flag/bot icon at given position (icon drawn to right of x)
+            function drawIconAt(x, y, type) {
                 ctx.save();
                 ctx.shadowBlur = 0;
-                const r = x - 6;
                 if (type === 'russia') {
-                    const fw = 18, fh = 11, sh = Math.round(fh / 3);
-                    ctx.fillStyle = '#fff';    ctx.fillRect(r - fw, y - fh/2, fw, sh);
-                    ctx.fillStyle = '#0039a6'; ctx.fillRect(r - fw, y - fh/2 + sh, fw, sh);
-                    ctx.fillStyle = '#d52b1e'; ctx.fillRect(r - fw, y - fh/2 + sh*2, fw, fh - sh*2);
+                    const fw = 16, fh = 10, sh = Math.round(fh / 3);
+                    ctx.fillStyle = '#fff';    ctx.fillRect(x, y - fh/2, fw, sh);
+                    ctx.fillStyle = '#0039a6'; ctx.fillRect(x, y - fh/2 + sh, fw, sh);
+                    ctx.fillStyle = '#d52b1e'; ctx.fillRect(x, y - fh/2 + sh*2, fw, fh - sh*2);
                 } else if (type === 'china') {
-                    const fw = 18, fh = 11;
-                    ctx.fillStyle = '#de2910'; ctx.fillRect(r - fw, y - fh/2, fw, fh);
-                    ctx.fillStyle = '#ffde00'; ctx.font = 'bold 10px system-ui';
-                    ctx.textAlign = 'left'; ctx.fillText('★', r - fw + 2, y + 4); ctx.textAlign = 'right';
+                    const fw = 16, fh = 10;
+                    ctx.fillStyle = '#de2910'; ctx.fillRect(x, y - fh/2, fw, fh);
+                    ctx.fillStyle = '#ffde00'; ctx.font = 'bold 9px system-ui';
+                    ctx.textAlign = 'left'; ctx.fillText('★', x + 2, y + 3);
                 } else if (type === 'bot') {
-                    const cx = r - 9, cy = y;
+                    const cx = x + 8, cy = y;
                     ctx.fillStyle = '#6b7280';
                     ctx.beginPath(); ctx.roundRect(cx - 7, cy - 6, 14, 12, 2); ctx.fill();
                     ctx.fillStyle = '#38bdf8';
@@ -3647,32 +3644,44 @@ function draw() {
                 }
                 ctx.restore();
             }
-            // Label clipped to band — 2 lines, compact
-            function drawBandLabel(bandTop, bandBot, title, subtitle, iconType) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(0, bandTop, w, bandBot - bandTop);
-                ctx.clip();
-                ctx.shadowColor = '#000000';
-                ctx.shadowBlur = 4;
+            // Draw right-margin label for each band
+            function drawRightLabel(bandTop, bandBot, title, subtitle, iconType, color) {
                 const cy = (bandTop + bandBot) / 2;
+                const labelX = chartRight + 8;
+                // Connector line from chart edge to label area
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.moveTo(chartRight, cy);
+                ctx.lineTo(labelX + 14, cy);
+                ctx.stroke();
+                ctx.restore();
+                // Icon
+                const textStartX = labelX + 4;
+                if (iconType) {
+                    drawIconAt(textStartX, cy - 2, iconType);
+                }
+                // Title
+                const titleX = iconType ? textStartX + 22 : textStartX;
+                ctx.save();
+                ctx.textAlign = 'left';
                 ctx.font = 'bold 13px system-ui';
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'right';
-                const tw = ctx.measureText(title).width;
-                ctx.fillText(title, lx, cy - 2);
-                if (iconType) drawIcon(lx - tw, cy - 3, iconType);
+                ctx.fillStyle = color;
+                ctx.fillText(title, titleX, subtitle ? cy - 3 : cy + 4);
+                // Subtitle
                 if (subtitle) {
-                    ctx.font = '10px system-ui';
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.fillText(subtitle, lx, cy + 11);
+                    ctx.font = '11px system-ui';
+                    ctx.globalAlpha = 0.7;
+                    ctx.fillText(subtitle, titleX, cy + 12);
                 }
                 ctx.restore();
             }
-            drawBandLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot');
-            drawBandLabel(yRussia, yChina, 'RUSSIA', 'Algorithm Attack', 'russia');
-            drawBandLabel(yChina, yNat, 'CHINA', 'Algorithmic manipulation', 'china');
-            drawBandLabel(yNat, yZero, 'Natural', null, null);
+            drawRightLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot', '#fca5a5');
+            drawRightLabel(yRussia, yChina, 'RUSSIA', 'Algorithm Attack', 'russia', '#93c5fd');
+            drawRightLabel(yChina, yNat, 'CHINA', 'Algorithmic manipulation', 'china', '#fbbf24');
+            drawRightLabel(yNat, yZero, 'Natural', null, null, '#94a3b8');
 
             // -- End clip and draw metallic scan line --
             if (deepRevealing) {
