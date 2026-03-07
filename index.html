@@ -3648,16 +3648,6 @@ function draw() {
             function drawRightLabel(bandTop, bandBot, title, subtitle, iconType, color) {
                 const cy = (bandTop + bandBot) / 2;
                 const labelX = chartRight + 8;
-                // Connector line from chart edge to label area
-                ctx.save();
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 1.5;
-                ctx.globalAlpha = 0.6;
-                ctx.beginPath();
-                ctx.moveTo(chartRight, cy);
-                ctx.lineTo(labelX + 14, cy);
-                ctx.stroke();
-                ctx.restore();
                 // Icon
                 const textStartX = labelX + 4;
                 if (iconType) {
