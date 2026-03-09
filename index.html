@@ -3509,17 +3509,17 @@ function draw() {
     // ==================== DEEP ANALYSIS STACKED LAYERS ====================
     const savedMarginRight = MARGIN.right;
     const deepRevealing = deepAnalysisMode && !deepReversing && deepRevealProgress >= 0 && deepRevealProgress < 1;
-    const deepRevealed  = deepAnalysisMode && deepRevealProgress >= 1;
+    const deepRevealed  = deepAnalysisMode && !deepReversing && deepRevealProgress >= 1;
     if (deepAnalysisMode && desireViewMode && activeDesire) {
-        if (deepRevealed) {
+        if (deepReversing) {
+            // Reverse: animate margin 190→30 synced with reverse progress
+            MARGIN.right = 30 + 160 * Math.max(0, deepRevealProgress);
+        } else if (deepRevealed) {
             // Post-reveal: animate margin 30→190
             if (!marginAnimStart) marginAnimStart = performance.now();
             const mt = Math.min(1, (performance.now() - marginAnimStart) / MARGIN_ANIM_DURATION);
             const eased = mt < 0.5 ? 4*mt*mt*mt : 1 - Math.pow(-2*mt+2,3)/2;
             MARGIN.right = 30 + 160 * eased;
-        } else if (deepReversing) {
-            // Reverse: animate margin 190→30 synced with reverse progress
-            MARGIN.right = 30 + 160 * Math.max(0, deepRevealProgress);
         }
         // During reveal: MARGIN.right stays 30 (default)
     }
@@ -3686,10 +3686,9 @@ function draw() {
                 }
                 ctx.restore();
             }
-            // Fade-in labels after margin animation completes
-            const marginDone = marginAnimStart && (performance.now() - marginAnimStart) >= MARGIN_ANIM_DURATION;
-            if (marginDone && !labelFadeStart) labelFadeStart = performance.now();
-            const labelAlpha = labelFadeStart ? Math.min(1, (performance.now() - labelFadeStart) / 400) : (deepReversing ? Math.max(0, deepRevealProgress) : 0);
+            // Fade-in labels after reveal completes
+            if (deepRevealed && !labelFadeStart) labelFadeStart = performance.now();
+            const labelAlpha = deepRevealed ? Math.min(1, (performance.now() - labelFadeStart) / 400) : (deepReversing ? Math.max(0, deepRevealProgress) : 0);
             if (labelAlpha > 0) {
                 ctx.globalAlpha = labelAlpha;
                 drawRightLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot', '#fca5a5');
@@ -5259,7 +5258,7 @@ function animate(now) {
     if (deepReversing) {
         if (!deepRevealStartTime) deepRevealStartTime = now;
         let t = (now - deepRevealStartTime) / 800;
-        if (t >= 1) { deepReversing = false; deepAnalysisMode = false; deepRevealProgress = -1; }
+        if (t >= 1) { deepReversing = false; deepAnalysisMode = false; deepRevealProgress = -1; marginAnimStart = 0; labelFadeStart = 0; }
         else { deepRevealProgress = 1 - (t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2); }
     } else if (deepRevealProgress >= 0 && deepRevealProgress < 1) {
         if (!deepRevealStartTime) deepRevealStartTime = now;
@@ -5295,13 +5294,11 @@ document.getElementById('deepAnalysisBtn').addEventListener('click', () => {
         deepRevealProgress = 0;
         deepRevealStartTime = 0;
         labelFadeStart = 0;
-        marginAnimStart = 0;
     } else {
         // Start reverse animation
         deepReversing = true;
         deepRevealStartTime = 0;
         labelFadeStart = 0;
-        marginAnimStart = 0;
     }
     draw();
 });
