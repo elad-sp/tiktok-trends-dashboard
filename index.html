@@ -2814,6 +2814,8 @@ let deepRevealProgress = -1;   // -1 = inactive, 0→1 = animating, 1 = done
 let deepRevealStartTime = 0;
 let deepReversing = false;
 let labelFadeStart = 0;
+let marginAnimStart = 0;
+const MARGIN_ANIM_DURATION = 400;
 const DEEP_REVEAL_DURATION = 2000; // 2s sweep
 let desireViewOwnerPath = [];
 let narrativeViewMode = false;
@@ -3506,12 +3508,21 @@ function draw() {
 
     // ==================== DEEP ANALYSIS STACKED LAYERS ====================
     const savedMarginRight = MARGIN.right;
-    if (deepAnalysisMode && desireViewMode && activeDesire) {
-        const marginProgress = deepRevealProgress >= 1 ? 1 : Math.max(0, deepRevealProgress);
-        MARGIN.right = 30 + (190 - 30) * marginProgress;
-    }
-    const deepRevealing = deepAnalysisMode && deepRevealProgress >= 0 && deepRevealProgress < 1;
+    const deepRevealing = deepAnalysisMode && !deepReversing && deepRevealProgress >= 0 && deepRevealProgress < 1;
     const deepRevealed  = deepAnalysisMode && deepRevealProgress >= 1;
+    if (deepAnalysisMode && desireViewMode && activeDesire) {
+        if (deepRevealed) {
+            // Post-reveal: animate margin 30→190
+            if (!marginAnimStart) marginAnimStart = performance.now();
+            const mt = Math.min(1, (performance.now() - marginAnimStart) / MARGIN_ANIM_DURATION);
+            const eased = mt < 0.5 ? 4*mt*mt*mt : 1 - Math.pow(-2*mt+2,3)/2;
+            MARGIN.right = 30 + 160 * eased;
+        } else if (deepReversing) {
+            // Reverse: animate margin 190→30 synced with reverse progress
+            MARGIN.right = 30 + 160 * Math.max(0, deepRevealProgress);
+        }
+        // During reveal: MARGIN.right stays 30 (default)
+    }
     const revealX = deepRevealing ? MARGIN.left + deepRevealProgress * chartW() : 0;
 
     if (deepAnalysisMode && desireViewMode && activeDesire) {
@@ -3675,9 +3686,10 @@ function draw() {
                 }
                 ctx.restore();
             }
-            // Fade-in labels after reveal completes
-            if (deepRevealed && !labelFadeStart) labelFadeStart = performance.now();
-            const labelAlpha = deepRevealed ? Math.min(1, (performance.now() - labelFadeStart) / 400) : (deepReversing ? Math.max(0, deepRevealProgress) : 0);
+            // Fade-in labels after margin animation completes
+            const marginDone = marginAnimStart && (performance.now() - marginAnimStart) >= MARGIN_ANIM_DURATION;
+            if (marginDone && !labelFadeStart) labelFadeStart = performance.now();
+            const labelAlpha = labelFadeStart ? Math.min(1, (performance.now() - labelFadeStart) / 400) : (deepReversing ? Math.max(0, deepRevealProgress) : 0);
             if (labelAlpha > 0) {
                 ctx.globalAlpha = labelAlpha;
                 drawRightLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot', '#fca5a5');
@@ -4393,10 +4405,18 @@ function drawPieAtCursor(cx, cursorY, values) {
             const ly = pieY + Math.sin(midAngle) * sliceR * 0.58;
             pieCtx.fillStyle = '#fff';
             const fontSize = Math.max(11, Math.round(R * 0.16));
-            pieCtx.font = 'bold ' + fontSize + 'px system-ui';
             pieCtx.textAlign = 'center';
+            // Extract leading emoji from category name
+            const emojiMatch = active[i].name.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u);
+            const emoji = emojiMatch ? emojiMatch[0] : '';
+            if (emoji) {
+                pieCtx.font = (fontSize - 2) + 'px system-ui';
+                pieCtx.textBaseline = 'middle';
+                pieCtx.fillText(emoji, lx, ly - fontSize * 0.7);
+            }
+            pieCtx.font = 'bold ' + fontSize + 'px system-ui';
             pieCtx.textBaseline = 'middle';
-            pieCtx.fillText(Math.round((val / total) * 100) + '%', lx, ly);
+            pieCtx.fillText(Math.round((val / total) * 100) + '%', lx, ly + (emoji ? fontSize * 0.4 : 0));
         }
         startAngle += sliceAngle;
     });
@@ -5275,11 +5295,13 @@ document.getElementById('deepAnalysisBtn').addEventListener('click', () => {
         deepRevealProgress = 0;
         deepRevealStartTime = 0;
         labelFadeStart = 0;
+        marginAnimStart = 0;
     } else {
         // Start reverse animation
         deepReversing = true;
         deepRevealStartTime = 0;
         labelFadeStart = 0;
+        marginAnimStart = 0;
     }
     draw();
 });
