@@ -3609,9 +3609,9 @@ function draw() {
                     rusV = v * 0.92;
                 } else {
                     const p = (t - tRamp) / (1 - tRamp);
-                    natV = v * (0.82 - 0.67 * p);
-                    chiV = v * (0.87 - 0.47 * p);
-                    rusV = v * (0.92 - 0.20 * p);
+                    natV = v * (0.82 - 0.30 * p);   // 0.82 → 0.52 (Natural shrinks less)
+                    chiV = v * (0.87 - 0.47 * p);  // 0.87 → 0.40
+                    rusV = v * (0.92 - 0.20 * p);  // 0.92 → 0.72
                 }
                 // Enforce monotonic non-decreasing (never dip)
                 if (natVals.length > 0) natV = Math.max(natV, natVals[natVals.length - 1]);
