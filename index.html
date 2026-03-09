@@ -544,8 +544,8 @@
         .insight-title {
             font-size: 0.85rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+            text-transform: none;
+            letter-spacing: 0.02em;
             color: #9ca3af;
         }
         .insight-section { margin-bottom: 2px; }
@@ -3502,13 +3502,7 @@ function draw() {
         ctx.fillText(Math.round(v) + '%', MARGIN.left - 8, y + 4);
     }
 
-    // X labels — snap to meaningful calendar dates
-    const tickXPositions = drawTimeAxis(ctx) || [];
-
-    // Lines + gradient fill + dots
-    const bottomY = MARGIN.top + chartH();
-
-    // ==================== DEEP ANALYSIS STACKED LAYERS ====================
+    // ==================== DEEP ANALYSIS MARGIN ====================
     const savedMarginRight = MARGIN.right;
     const deepRevealing = deepAnalysisMode && deepRevealProgress >= 0 && deepRevealProgress < 1 && (!deepReversing || deepReversePhase === 3);
     const deepRevealed  = deepAnalysisMode && !deepReversing && deepRevealProgress >= 1;
@@ -3533,6 +3527,11 @@ function draw() {
         }
         // During reveal: MARGIN.right stays 30 (default)
     }
+
+    // X labels — snap to meaningful calendar dates (after margin is set)
+    const tickXPositions = drawTimeAxis(ctx) || [];
+    const bottomY = MARGIN.top + chartH();
+
     const revealX = deepRevealing ? MARGIN.left + deepRevealProgress * chartW() : 0;
 
     if (deepAnalysisMode && desireViewMode && activeDesire) {
