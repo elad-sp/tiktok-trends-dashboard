@@ -3603,13 +3603,16 @@ function draw() {
                 // Contamination: flat until ~1 month ago, then ramps up. Never decreasing.
                 const tRamp = 0.55; // ~1 month ago
                 let natV, chiV, rusV;
+                // Natural stays nearly flat at starting level (~20-25)
+                const v0 = dataStreams[aggSi][0]; // first value
+                const natBase = v0 * 0.82;        // Natural's absolute flat level
                 if (t <= tRamp) {
-                    natV = v * 0.82;
+                    natV = natBase;
                     chiV = v * 0.87;
                     rusV = v * 0.92;
                 } else {
                     const p = (t - tRamp) / (1 - tRamp);
-                    natV = v * (0.82 - 0.30 * p);   // 0.82 → 0.52 (Natural shrinks less)
+                    natV = natBase + (natBase * 0.15 * p); // very slight rise
                     chiV = v * (0.87 - 0.47 * p);  // 0.87 → 0.40
                     rusV = v * (0.92 - 0.20 * p);  // 0.92 → 0.72
                 }
