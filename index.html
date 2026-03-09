@@ -3603,23 +3603,34 @@ function draw() {
                 // Contamination: flat until ~1 month ago, then ramps up. Never decreasing.
                 const tRamp = 0.55; // ~1 month ago
                 let natV, chiV, rusV;
-                // Natural stays nearly flat at starting level (~20-25)
-                const v0 = dataStreams[aggSi][0]; // first value
-                const natBase = v0 * 0.82;        // Natural's absolute flat level
+                // Natural rises gently from the start
+                const v0 = dataStreams[aggSi][0];
+                const natBase = v0 * 0.82;
                 if (t <= tRamp) {
-                    natV = natBase;
+                    natV = natBase * (1 + 0.3 * t);       // gentle rise
                     chiV = v * 0.87;
                     rusV = v * 0.92;
                 } else {
                     const p = (t - tRamp) / (1 - tRamp);
-                    natV = natBase + (natBase * 0.15 * p); // very slight rise
-                    chiV = v * (0.87 - 0.47 * p);  // 0.87 → 0.40
-                    rusV = v * (0.92 - 0.20 * p);  // 0.92 → 0.72
+                    natV = natBase * (1 + 0.3 * tRamp) + natBase * 0.25 * p;
+                    chiV = v * (0.87 - 0.47 * p);
+                    rusV = v * (0.92 - 0.20 * p);
                 }
                 // Enforce monotonic non-decreasing (never dip)
                 if (natVals.length > 0) natV = Math.max(natV, natVals[natVals.length - 1]);
                 if (chinaVals.length > 0) chiV = Math.max(chiV, chinaVals[chinaVals.length - 1]);
                 if (russiaVals.length > 0) rusV = Math.max(rusV, russiaVals[russiaVals.length - 1]);
+                // Ensure minimum upward slope once contamination started rising
+                [chinaVals, russiaVals].forEach(arr => {
+                    if (arr.length > 1) {
+                        const prev = arr[arr.length - 1], prev2 = arr[arr.length - 2];
+                        if (prev > prev2) {
+                            const minNext = prev + (prev - prev2) * 0.5;
+                            if (arr === chinaVals) chiV = Math.max(chiV, minNext);
+                            else rusV = Math.max(rusV, minNext);
+                        }
+                    }
+                });
                 // Cap at aggVals
                 natVals.push(Math.min(natV, v));
                 chinaVals.push(Math.min(chiV, v));
