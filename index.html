@@ -3520,25 +3520,24 @@ function draw() {
         if (narrMax < 1) narrMax = 1;
         narrMax *= 1.1; // 10% padding
 
-        // K tick marks on right side of narrative zone
+        // K tick marks — round numbers (100K, 200K, 300K...) left side only
         ctx.save();
-        const kStepCount = 3;
-        for (let k = 0; k <= kStepCount; k++) {
-            const rawV = narrMax * k / kStepCount;
+        const maxK = Math.ceil(narrMax * DESIRE_EXPOSURE_SCALE / 100) * 100;
+        const kStep = maxK <= 200 ? 50 : 100;
+        for (let kv = kStep; kv <= maxK; kv += kStep) {
+            const rawV = kv / DESIRE_EXPOSURE_SCALE;
+            if (rawV > narrMax) break;
             const frac = rawV / narrMax;
             const y = narrZoneBot - frac * (narrZoneBot - narrZoneTop);
-            const label = Math.round(rawV * DESIRE_EXPOSURE_SCALE) + 'K';
             // Grid line
             ctx.strokeStyle = 'rgba(255,255,255,0.03)';
             ctx.lineWidth = 1;
             ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(MARGIN.left + chartW(), y); ctx.stroke();
-            // Label on both sides
+            // Label on left
             ctx.fillStyle = '#64748b';
             ctx.font = '10px system-ui';
             ctx.textAlign = 'right';
-            ctx.fillText(label, MARGIN.left - 8, y + 3);
-            ctx.textAlign = 'left';
-            ctx.fillText(label, MARGIN.left + chartW() + 4, y + 3);
+            ctx.fillText(kv + 'K', MARGIN.left - 8, y + 3);
         }
         // Dashed separator at 20%
         ctx.strokeStyle = 'rgba(255,255,255,0.08)';
