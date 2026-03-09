@@ -3600,14 +3600,20 @@ function draw() {
                 xs.push(xForIndex(i));
                 aggVals.push(v);
                 // Layers split WITHIN aggVals: Natural < China < Russia < Bots = aggVals
-                // Foreign influence ramps up: half until ~1 month ago, then full
-                const ramp = t < 0.6 ? 0.5 + 0.5 * (t / 0.6) : 1.0;
-                const natR  = 1 - (1 - (0.35 - 0.20 * t)) * ramp;
-                const chiR  = 1 - (1 - (0.55 - 0.15 * t)) * ramp;
-                const rusR  = 1 - (1 - (0.82 - 0.10 * t)) * ramp;
-                natVals.push(v * natR);
-                chinaVals.push(v * chiR);
-                russiaVals.push(v * rusR);
+                // Contamination flat until ~1 month ago (t≈0.55), then ramps up
+                const tRamp = 0.55; // ~1 month ago
+                if (t <= tRamp) {
+                    // Flat: fixed low contamination ratios
+                    natVals.push(v * 0.82);
+                    chinaVals.push(v * 0.87);
+                    russiaVals.push(v * 0.92);
+                } else {
+                    // Ramp up: contamination grows from flat level to full
+                    const p = (t - tRamp) / (1 - tRamp); // 0→1
+                    natVals.push(v * (0.82 - 0.67 * p));   // 0.82 → 0.15
+                    chinaVals.push(v * (0.87 - 0.47 * p));  // 0.87 → 0.40
+                    russiaVals.push(v * (0.92 - 0.20 * p)); // 0.92 → 0.72
+                }
                 // botsVals = aggVals (top layer goes to the white line)
             }
             function fillBand(xArr, bot, top, color, alpha) {
