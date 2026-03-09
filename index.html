@@ -4854,16 +4854,20 @@ function buildLegend() {
         const displayNarrs = [...rising.map(n => ({ ...n, dir: 'up' })), ...declining.map(n => ({ ...n, dir: 'down' }))];
         displayNarrs.forEach((n, i) => {
             const stream = dataStreams[i];
-            const curVal = stream ? Math.round(stream[Math.min(TODAY_IDX, stream.length - 1)] * 10) / 10 : n.base;
+            const curVal = stream ? stream[Math.min(TODAY_IDX, stream.length - 1)] : n.base;
             const startVal = stream ? stream[0] : n.base;
-            const d = Math.round(curVal - startVal);
-            const deltaColor = d > 0 ? '#22c55e' : d < 0 ? '#ef4444' : '#6b7280';
-            const deltaArrow = d > 0 ? '↑' : d < 0 ? '↓' : '';
-            const deltaSign = d > 0 ? '+' : '';
+            // Exposure in K (multiply by 15 to get realistic TikTok exposure)
+            const exposureK = Math.round(curVal * 15);
+            const exposureStr = exposureK >= 1000 ? (exposureK / 1000).toFixed(1) + 'M' : exposureK + 'K';
+            // Delta as percentage change
+            const dPct = startVal > 0 ? Math.round((curVal - startVal) / startVal * 100) : 0;
+            const deltaColor = dPct > 0 ? '#22c55e' : dPct < 0 ? '#ef4444' : '#6b7280';
+            const deltaArrow = dPct > 0 ? '↑' : dPct < 0 ? '↓' : '';
+            const deltaSign = dPct > 0 ? '+' : '';
             const boxColor = dataColors[i] || SERIES_COLORS[i % SERIES_COLORS.length];
             html += `<div class="legend-item">
                 <div class="legend-color" style="background:${boxColor}"></div>
-                <span>${n.name} <small class="legend-pct" style="color:#6b7280;font-size:0.7rem">${Math.round(curVal)}%</small> <small class="legend-delta" style="color:${deltaColor}">${deltaArrow}${deltaSign}${d}%</small></span>
+                <span>${n.name} <small class="legend-pct" style="color:#6b7280;font-size:0.7rem">${exposureStr}</small> <small class="legend-delta" style="color:${deltaColor}">${deltaArrow}${deltaSign}${dPct}%</small></span>
             </div>`;
         });
         el.innerHTML = html;
