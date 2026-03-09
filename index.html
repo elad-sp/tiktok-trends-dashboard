@@ -124,6 +124,11 @@
             max-width: 400px;
             aspect-ratio: 1;
         }
+        #barCanvas {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1;
+        }
         #pieTooltip {
             position: fixed;
             pointer-events: none;
@@ -611,7 +616,7 @@
     <div class="sidebar-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>
     </div>
-    <div class="sidebar-icon">
+    <div class="sidebar-icon" id="offlineSunBtn" title="Offline: Desire bar chart">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
     </div>
     <div class="sidebar-icon" id="shortcutDesireBtn" title="Pre-Draft Youth: I don't want to join IDF">
@@ -644,6 +649,7 @@
             <div class="charts-area">
                 <div class="pie-container">
                     <canvas id="pieCanvas"></canvas>
+                    <canvas id="barCanvas" style="display:none"></canvas>
                     <div id="pieTooltip"></div>
                 </div>
                 <div class="chart-container">
@@ -2801,6 +2807,7 @@ let mouseY = -1;
 let mouseInside = false;
 let animFrame;
 let scanProgress = 0;
+let offlineMode = false;
 let scanActive = true;
 let scanStartTime = 0;
 const SCAN_SWEEP = 6000;   // 6s per sweep
@@ -4140,6 +4147,12 @@ function draw() {
     }
 
     if (desireViewMode && activeDesire) {
+        // Toggle pie vs bar canvas
+        const _barC = document.getElementById('barCanvas');
+        const _pieC = document.getElementById('pieCanvas');
+        if (_barC) _barC.style.display = offlineMode ? 'block' : 'none';
+        if (_pieC) _pieC.style.display = offlineMode ? 'none' : 'block';
+
         const aggSi = activeDesire.narratives.length;
         const aggY = yForValue(getValueAtFloat(aggSi, floatIdx));
         const ops = activeDesire.opinion;
@@ -4153,7 +4166,11 @@ function draw() {
             unsure:    Math.round(a.unsure    * (1 - f) + b.unsure    * f),
             disagrees: Math.round(a.disagrees * (1 - f) + b.disagrees * f),
         };
-        drawDesirePie(snapX, aggY, opAtPoint);
+        if (offlineMode) {
+            drawBarChart(floatIdx, values);
+        } else {
+            drawDesirePie(snapX, aggY, opAtPoint);
+        }
         // Update desire legend values at hover/scan position
         const narrCount = activeDesire.narratives.length;
         const narrValues = values.slice(0, narrCount);
@@ -4546,6 +4563,80 @@ function drawPieAtCursor(cx, cursorY, values) {
     }
 }
 
+function drawBarChart(floatIdx, values) {
+    const barCanvas = document.getElementById('barCanvas');
+    if (!barCanvas || !activeDesire) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const bCtx = barCanvas.getContext('2d');
+    const bw = barCanvas.width / dpr;
+    const bh = barCanvas.height / dpr;
+
+    bCtx.save();
+    bCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    bCtx.clearRect(0, 0, bw, bh);
+
+    const narrs = activeDesire.narratives;
+    const count = narrs.length;
+    const narrValues = values.slice(0, count);
+    const maxVal = Math.max(...narrValues, 1);
+
+    const padTop = 30, padBot = 50;
+    const barAreaH = bh - padTop - padBot;
+    const gap = 14;
+    const barW = (bw - gap * (count + 1)) / count;
+    const startX = gap;
+
+    narrValues.forEach((val, i) => {
+        const barH = Math.max(2, (val / maxVal) * barAreaH);
+        const x = startX + i * (barW + gap);
+        const y = padTop + barAreaH - barH;
+
+        // Bar gradient
+        const color = dataColors[i] || '#3b82f6';
+        const grad = bCtx.createLinearGradient(x, y, x, y + barH);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, color + '99');
+        bCtx.fillStyle = grad;
+        bCtx.globalAlpha = 0.88;
+        bCtx.beginPath();
+        bCtx.roundRect(x, y, barW, barH, [5, 5, 0, 0]);
+        bCtx.fill();
+        bCtx.globalAlpha = 1.0;
+
+        // Glow at top
+        bCtx.shadowColor = color;
+        bCtx.shadowBlur = 8;
+        bCtx.fillStyle = color;
+        bCtx.fillRect(x + 2, y, barW - 4, 2);
+        bCtx.shadowBlur = 0;
+
+        // Value label above bar
+        const kVal = Math.round(val * DESIRE_EXPOSURE_SCALE);
+        bCtx.fillStyle = '#e2e8f0';
+        bCtx.font = 'bold 12px system-ui';
+        bCtx.textAlign = 'center';
+        bCtx.fillText(kVal + 'K', x + barW / 2, y - 8);
+
+        // Narrative label below bar (wrap 2 lines)
+        bCtx.fillStyle = '#94a3b8';
+        bCtx.font = '9px system-ui';
+        const words = narrs[i].name.split(' ');
+        let line1 = '', line2 = '';
+        for (const w of words) {
+            if (!line1 || bCtx.measureText(line1 + ' ' + w).width < barW + 4) {
+                line1 += (line1 ? ' ' : '') + w;
+            } else if (!line2 || bCtx.measureText(line2 + ' ' + w).width < barW + 4) {
+                line2 += (line2 ? ' ' : '') + w;
+            }
+        }
+        bCtx.fillText(line1, x + barW / 2, bh - padBot + 14);
+        if (line2) bCtx.fillText(line2, x + barW / 2, bh - padBot + 25);
+    });
+
+    bCtx.restore();
+}
+
 function drawDesirePie(cx, cy, opinionAtPoint) {
     const { agrees, unsure, disagrees } = opinionAtPoint;
     const total = agrees + unsure + disagrees;
@@ -4822,6 +4913,7 @@ function enterDesireView(desire) {
 }
 
 function exitDesireView() {
+    offlineMode = false;
     desireViewMode = false;
     activeDesire = null;
     deepAnalysisMode = false;
@@ -4940,7 +5032,8 @@ function buildLegend() {
             html += `<button class="bc-step" onclick="exitDesireView()">${narrName}</button>`;
         }
         const cleanLabel = activeDesire.label.replace(/^[\p{Emoji}\p{Emoji_Component}\u200D\uFE0F\u200B]+\s*/u, '');
-        html += `<span class="bc-sep">›</span><span class="bc-current">Desire: ${cleanLabel}</span>`;
+        const offlineSuffix = offlineMode ? ' screen offline' : '';
+        html += `<span class="bc-sep">›</span><span class="bc-current">Desire: ${cleanLabel}${offlineSuffix}</span>`;
         html += '</div>';
         // Influencing narratives with values and deltas
         html += '<div style="margin:14px 0 6px;font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Influencing Narratives</div>';
@@ -5869,6 +5962,7 @@ function drillDown(idx) {
 }
 
 function drillTo(depth) {
+    offlineMode = false;
     if (desireViewMode) { desireViewMode = false; activeDesire = null; }
     if (narrativeViewMode) { narrativeViewMode = false; activeNarrativeIdx = null; }
     drilldownPath = drilldownPath.slice(0, depth);
@@ -5949,6 +6043,13 @@ function initPieCanvas() {
     pieCanvas.height = size * dpr;
     pieCanvas.style.width = size + 'px';
     pieCanvas.style.height = size + 'px';
+    const barC = document.getElementById('barCanvas');
+    if (barC) {
+        barC.width = size * dpr;
+        barC.height = size * dpr;
+        barC.style.width = size + 'px';
+        barC.style.height = size + 'px';
+    }
 }
 
 document.getElementById('timeSlider').addEventListener('input', onSliderInput);
@@ -5974,21 +6075,36 @@ document.getElementById('deepAnalysisBtn').addEventListener('click', () => {
 updateSliderTrack();
 
 document.getElementById('shortcutDesireBtn').addEventListener('click', () => {
-    // Set age filter to 17-22 (index 2)
+    offlineMode = false;
     for (const f of FILTERS) activeFilters[f.key].clear();
     activeFilters.age.add(2);
     renderFilterBar();
-    // Drill to Current Affairs → Security → IDF Service
     desireViewMode = false; activeDesire = null;
     narrativeViewMode = false; activeNarrativeIdx = null;
-    drilldownPath = [2, 0, 5]; // Current Affairs, Security, IDF Service
+    drilldownPath = [2, 0, 5];
     generateData(); buildLegend();
-    // Find and enter desire view
     const active = getActiveSeries();
     for (const child of active) {
         if (!child.insights || !child.insights.desire) continue;
         const d = child.insights.desire.find(d => d.label === "🙎🏻‍♂️ I don't want to join IDF");
         if (d) { enterDesireView(d); return; }
+    }
+    draw();
+});
+
+document.getElementById('offlineSunBtn').addEventListener('click', () => {
+    for (const f of FILTERS) activeFilters[f.key].clear();
+    activeFilters.age.add(2);
+    renderFilterBar();
+    desireViewMode = false; activeDesire = null;
+    narrativeViewMode = false; activeNarrativeIdx = null;
+    drilldownPath = [2, 0, 5];
+    generateData(); buildLegend();
+    const active = getActiveSeries();
+    for (const child of active) {
+        if (!child.insights || !child.insights.desire) continue;
+        const d = child.insights.desire.find(d => d.label === "🙎🏻‍♂️ I don't want to join IDF");
+        if (d) { offlineMode = true; enterDesireView(d); return; }
     }
     draw();
 });
