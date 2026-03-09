@@ -2809,6 +2809,7 @@ const SCAN_CYCLE = SCAN_SWEEP + SCAN_PAUSE + SCAN_SWEEP + SCAN_PAUSE; // 18s tot
 let drilldownPath = [];
 let desireViewMode = false;
 let activeDesire = null;
+const DESIRE_EXPOSURE_SCALE = 5; // internal value * scale = thousands of exposures
 let deepAnalysisMode = false;
 let deepRevealProgress = -1;   // -1 = inactive, 0→1 = animating, 1 = done
 let deepRevealStartTime = 0;
@@ -3237,13 +3238,9 @@ function generateData() {
             ]).map(v => Math.max(0.3, v));
         });
         const aggStream = Array.from({ length: TOTAL_POINTS }, (_, t) => {
-            const frac = t / (TOTAL_POINTS - 1);
-            const segFrac = frac * (ops.length - 1);
-            const segIdx = Math.min(Math.floor(segFrac), ops.length - 2);
-            const f = segFrac - segIdx;
-            const a = ops[segIdx], b = ops[Math.min(segIdx + 1, ops.length - 1)];
-            const net = (a.agrees - a.disagrees) * (1 - f) + (b.agrees - b.disagrees) * f;
-            return net;
+            let sum = 0;
+            for (let si = 0; si < dataStreams.length; si++) sum += dataStreams[si][t] || 0;
+            return sum;
         });
         dataStreams.push(aggStream);
         // Apply exponential projection after TODAY_IDX (narrative streams only, NOT aggStream)
@@ -3471,7 +3468,15 @@ function draw() {
 
     // Compute dynamic Y range from visible data
     if (desireViewMode) {
-        yAxisMin = 0; yAxisMax = 100;
+        let dMax = -Infinity;
+        dataStreams.forEach(stream => {
+            for (let i = offset; i < offset + VISIBLE_POINTS && i < stream.length; i++)
+                if (stream[i] > dMax) dMax = stream[i];
+        });
+        if (dMax === -Infinity) dMax = 50;
+        yAxisMin = 0;
+        yAxisMax = Math.ceil((dMax * 1.1) / 5) * 5;
+        if (yAxisMax < 10) yAxisMax = 10;
     } else {
         let dMin = Infinity, dMax = -Infinity;
         dataStreams.forEach(stream => {
@@ -3492,14 +3497,14 @@ function draw() {
     // Grid
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 1;
-    const _gridStep = desireViewMode ? 25 : Math.max(5, Math.round((yAxisMax - yAxisMin) / 5 / 5) * 5) || 5;
+    const _gridStep = Math.max(5, Math.round((yAxisMax - yAxisMin) / 5 / 5) * 5) || 5;
     for (let v = yAxisMin; v <= yAxisMax; v += _gridStep) {
         const y = yForValue(v);
         ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(MARGIN.left + chartW(), y); ctx.stroke();
         ctx.fillStyle = '#4b5563';
         ctx.font = '11px system-ui';
         ctx.textAlign = 'right';
-        ctx.fillText(Math.round(v) + '%', MARGIN.left - 8, y + 4);
+        ctx.fillText(desireViewMode ? Math.round(v * DESIRE_EXPOSURE_SCALE) + 'K' : Math.round(v) + '%', MARGIN.left - 8, y + 4);
     }
 
     // ==================== DEEP ANALYSIS MARGIN ====================
@@ -4042,7 +4047,7 @@ function draw() {
             const vLo = da.stream[lo], vHi = da.stream[Math.min(hi, da.stream.length - 1)];
             if (vLo == null) return;
             const v = lo === hi ? vLo : vLo + (vHi - vLo) * (fi - lo);
-            const y = MARGIN.top + (1 - v / 100) * chartH();
+            const y = yForValue(v);
             ctx.beginPath();
             ctx.arc(snapX, y, 4, 0, Math.PI * 2);
             ctx.fillStyle = da.color;
@@ -4769,7 +4774,9 @@ function updateLegendValues(values, total) {
     items.forEach((item, i) => {
         const small = item.querySelector('small.legend-pct');
         if (small && i < values.length) {
-            small.textContent = Math.round((values[i] / total) * 100) + '%';
+            small.textContent = desireViewMode
+                ? Math.round(values[i] * DESIRE_EXPOSURE_SCALE) + 'K'
+                : Math.round((values[i] / total) * 100) + '%';
             small.style.color = '#d1d5db';
         }
     });
@@ -4854,20 +4861,18 @@ function buildLegend() {
         const displayNarrs = [...rising.map(n => ({ ...n, dir: 'up' })), ...declining.map(n => ({ ...n, dir: 'down' }))];
         displayNarrs.forEach((n, i) => {
             const stream = dataStreams[i];
-            const curVal = stream ? stream[Math.min(TODAY_IDX, stream.length - 1)] : n.base;
-            const startVal = stream ? stream[0] : n.base;
-            // Exposure in K (multiply by 15 to get realistic TikTok exposure)
-            const exposureK = Math.round(curVal * 15);
-            const exposureStr = exposureK >= 1000 ? (exposureK / 1000).toFixed(1) + 'M' : exposureK + 'K';
-            // Delta as percentage change
-            const dPct = startVal > 0 ? Math.round((curVal - startVal) / startVal * 100) : 0;
-            const deltaColor = dPct > 0 ? '#22c55e' : dPct < 0 ? '#ef4444' : '#6b7280';
-            const deltaArrow = dPct > 0 ? '↑' : dPct < 0 ? '↓' : '';
-            const deltaSign = dPct > 0 ? '+' : '';
+            const curRaw = stream ? stream[Math.min(TODAY_IDX, stream.length - 1)] : n.base;
+            const startRaw = stream ? stream[0] : n.base;
+            const curK = Math.round(curRaw * DESIRE_EXPOSURE_SCALE);
+            const startK = Math.round(startRaw * DESIRE_EXPOSURE_SCALE);
+            const pctChange = startK > 0 ? Math.round((curK - startK) / startK * 100) : 0;
+            const deltaColor = pctChange > 0 ? '#22c55e' : pctChange < 0 ? '#ef4444' : '#6b7280';
+            const deltaArrow = pctChange > 0 ? '↑' : pctChange < 0 ? '↓' : '';
+            const deltaSign = pctChange > 0 ? '+' : '';
             const boxColor = dataColors[i] || SERIES_COLORS[i % SERIES_COLORS.length];
             html += `<div class="legend-item">
                 <div class="legend-color" style="background:${boxColor}"></div>
-                <span>${n.name} <small class="legend-pct" style="color:#6b7280;font-size:0.7rem">${exposureStr}</small> <small class="legend-delta" style="color:${deltaColor}">${deltaArrow}${deltaSign}${dPct}%</small></span>
+                <span>${n.name} <small class="legend-pct" style="color:#6b7280;font-size:0.7rem">${curK}K</small> <small class="legend-delta" style="color:${deltaColor}">${deltaArrow}${deltaSign}${pctChange}%</small></span>
             </div>`;
         });
         el.innerHTML = html;
@@ -5039,6 +5044,162 @@ function buildInsightPanel() {
                 body.classList.toggle('open', open);
             });
         });
+        return;
+    }
+
+    // Root-level: hardcoded TikTok platform desires
+    if (drilldownPath.length === 0) {
+        const SCROLL = { label: '🙎🏻‍♂️ I want to keep scrolling this app',
+          narratives: [
+            { name: 'Algorithm shows exactly what you want next',       base: 12, color: '#1e3a8a' },
+            { name: 'Creators post cliffhangers forcing you to stay',   base: 10, color: '#2563eb' },
+            { name: 'Average Israeli spends 95 minutes daily here',     base:  9, color: '#3b82f6' },
+            { name: 'Endless scroll removes natural stopping points',   base:  7, color: '#38bdf8' },
+            { name: 'Parents share screen time addiction horror stories',base:  5, color: '#bae6fd' },
+          ],
+          opinion: [
+            { agrees: 72, unsure: 15, disagrees: 13 }, { agrees: 73, unsure: 14, disagrees: 13 },
+            { agrees: 74, unsure: 14, disagrees: 12 }, { agrees: 75, unsure: 13, disagrees: 12 },
+            { agrees: 76, unsure: 13, disagrees: 11 }, { agrees: 77, unsure: 12, disagrees: 11 },
+            { agrees: 78, unsure: 12, disagrees: 10 },
+          ]
+        };
+        const ROOT_ALL = [ SCROLL,
+          { label: '🙎🏻‍♂️ I want to make homemade shawarma',
+            narratives: [
+              { name: 'TikTok shawarma recipe goes viral in Israel',    base: 12, color: '#1e3a8a' },
+              { name: 'Ground meat sold out in stores nationwide',       base: 10, color: '#2563eb' },
+              { name: 'Families film weekend shawarma cook challenges',  base:  9, color: '#3b82f6' },
+              { name: 'Chefs debate the best homemade shawarma method', base:  7, color: '#38bdf8' },
+              { name: 'Butchers report 40% spike in meat demand',       base:  5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 68, unsure: 18, disagrees: 14 }, { agrees: 70, unsure: 17, disagrees: 13 },
+              { agrees: 72, unsure: 16, disagrees: 12 }, { agrees: 74, unsure: 15, disagrees: 11 },
+              { agrees: 76, unsure: 14, disagrees: 10 }, { agrees: 78, unsure: 13, disagrees:  9 },
+              { agrees: 80, unsure: 12, disagrees:  8 },
+            ]
+          },
+          { label: '🙎🏻‍♂️ I want that LED face mask',
+            narratives: [
+              { name: 'Beauty creators show dramatic before and after',  base: 12, color: '#1e3a8a' },
+              { name: 'LED mask sales spike 300% after TikTok trend',   base: 10, color: '#2563eb' },
+              { name: 'Dermatologists weigh in on LED mask effectiveness',base: 9, color: '#3b82f6' },
+              { name: 'Budget LED mask alternatives go viral on TikTok', base: 7, color: '#38bdf8' },
+              { name: 'Teens beg parents for LED masks as gifts',       base:  5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 55, unsure: 25, disagrees: 20 }, { agrees: 57, unsure: 24, disagrees: 19 },
+              { agrees: 59, unsure: 23, disagrees: 18 }, { agrees: 61, unsure: 22, disagrees: 17 },
+              { agrees: 63, unsure: 21, disagrees: 16 }, { agrees: 65, unsure: 20, disagrees: 15 },
+              { agrees: 67, unsure: 19, disagrees: 14 },
+            ]
+          },
+          { label: '🙎🏻‍♂️ I want to vacation in Albania',
+            narratives: [
+              { name: 'Israeli TikTokers film stunning Albanian coastline',base:12, color: '#1e3a8a' },
+              { name: 'Albania flights from Israel sell out in hours',   base: 10, color: '#2563eb' },
+              { name: 'Budget travel creators compare Albania to Greece',base:  9, color: '#3b82f6' },
+              { name: 'Albanian locals film reactions to Israeli tourists',base: 7, color: '#38bdf8' },
+              { name: 'Travel agents report 200% Albania booking surge', base:  5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 60, unsure: 22, disagrees: 18 }, { agrees: 62, unsure: 21, disagrees: 17 },
+              { agrees: 64, unsure: 20, disagrees: 16 }, { agrees: 66, unsure: 19, disagrees: 15 },
+              { agrees: 68, unsure: 18, disagrees: 14 }, { agrees: 70, unsure: 17, disagrees: 13 },
+              { agrees: 72, unsure: 16, disagrees: 12 },
+            ]
+          },
+          { label: '🙎🏻‍♂️ I want to try Japanese cheesecake',
+            narratives: [
+              { name: 'No-bake yogurt cheesecake hack goes mega viral', base: 12, color: '#1e3a8a' },
+              { name: 'Israeli teens film themselves trying the recipe', base: 10, color: '#2563eb' },
+              { name: 'Greek yogurt sales surge after cheesecake trend',base:  9, color: '#3b82f6' },
+              { name: 'Professional bakers react to the viral method',  base:  7, color: '#38bdf8' },
+              { name: 'Grocery stores create dedicated cheesecake displays',base:5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 65, unsure: 20, disagrees: 15 }, { agrees: 67, unsure: 19, disagrees: 14 },
+              { agrees: 69, unsure: 18, disagrees: 13 }, { agrees: 71, unsure: 17, disagrees: 12 },
+              { agrees: 73, unsure: 16, disagrees: 11 }, { agrees: 75, unsure: 15, disagrees: 10 },
+              { agrees: 77, unsure: 14, disagrees:  9 },
+            ]
+          },
+        ];
+        const ROOT_YOUTH = [ SCROLL,
+          { label: '🙎🏻‍♂️ I want to become a TikTok creator',
+            narratives: [
+              { name: '83% of viral Israeli content is collaborative',  base: 12, color: '#1e3a8a' },
+              { name: 'Teen creators gain millions of followers overnight',base:10, color: '#2563eb' },
+              { name: 'TikTok creator fund pays top Israeli influencers',base: 9, color: '#3b82f6' },
+              { name: 'Schools report students filming during class breaks',base:7, color: '#38bdf8' },
+              { name: 'Parents worry about teen creator obsession growing',base: 5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 70, unsure: 18, disagrees: 12 }, { agrees: 72, unsure: 17, disagrees: 11 },
+              { agrees: 74, unsure: 16, disagrees: 10 }, { agrees: 76, unsure: 15, disagrees:  9 },
+              { agrees: 78, unsure: 14, disagrees:  8 }, { agrees: 80, unsure: 13, disagrees:  7 },
+              { agrees: 82, unsure: 12, disagrees:  6 },
+            ]
+          },
+          { label: '🙎🏻‍♂️ I want Alo Yoga activewear',
+            narratives: [
+              { name: 'Alo Yoga surpasses Lululemon as teen status brand',base:12, color: '#1e3a8a' },
+              { name: 'Israeli teens line up for Alo store opening',    base: 10, color: '#2563eb' },
+              { name: 'TikTok hauls feature Alo sets as must-have items',base: 9, color: '#3b82f6' },
+              { name: 'Dupes of Alo leggings go viral on Amazon',      base:  7, color: '#38bdf8' },
+              { name: 'Parents debate spending 400 shekels on leggings',base:  5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 62, unsure: 20, disagrees: 18 }, { agrees: 64, unsure: 19, disagrees: 17 },
+              { agrees: 66, unsure: 18, disagrees: 16 }, { agrees: 68, unsure: 17, disagrees: 15 },
+              { agrees: 70, unsure: 16, disagrees: 14 }, { agrees: 72, unsure: 15, disagrees: 13 },
+              { agrees: 74, unsure: 14, disagrees: 12 },
+            ]
+          },
+          { label: '🙎🏻‍♂️ I want to do the glow-up trend',
+            narratives: [
+              { name: 'Primadonna glow-up videos get billions of views',base: 12, color: '#1e3a8a' },
+              { name: 'Israeli teens share dramatic before and after clips',base:10, color: '#2563eb' },
+              { name: 'Makeup brands surge from glow-up tutorial demand',base:  9, color: '#3b82f6' },
+              { name: 'Self-esteem debates emerge around glow-up culture',base: 7, color: '#38bdf8' },
+              { name: 'Schools ban filming glow-up content on campus',  base:  5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 65, unsure: 20, disagrees: 15 }, { agrees: 67, unsure: 19, disagrees: 14 },
+              { agrees: 69, unsure: 18, disagrees: 13 }, { agrees: 71, unsure: 17, disagrees: 12 },
+              { agrees: 73, unsure: 16, disagrees: 11 }, { agrees: 75, unsure: 15, disagrees: 10 },
+              { agrees: 77, unsure: 14, disagrees:  9 },
+            ]
+          },
+          { label: '🙎🏻‍♂️ I want to find vintage on Depop',
+            narratives: [
+              { name: 'Vintage finds carry more status than new clothes',base: 12, color: '#1e3a8a' },
+              { name: 'Israeli teens discover Depop for unique fashion',base: 10, color: '#2563eb' },
+              { name: 'Thrift haul videos dominate teen TikTok feeds',  base:  9, color: '#3b82f6' },
+              { name: 'Sustainable fashion becomes Gen Z identity marker',base: 7, color: '#38bdf8' },
+              { name: 'Parents surprised teens prefer used over new',   base:  5, color: '#bae6fd' },
+            ],
+            opinion: [
+              { agrees: 58, unsure: 24, disagrees: 18 }, { agrees: 60, unsure: 23, disagrees: 17 },
+              { agrees: 62, unsure: 22, disagrees: 16 }, { agrees: 64, unsure: 21, disagrees: 15 },
+              { agrees: 66, unsure: 20, disagrees: 14 }, { agrees: 68, unsure: 19, disagrees: 13 },
+              { agrees: 70, unsure: 18, disagrees: 12 },
+            ]
+          },
+        ];
+        const isYouthRoot = activeFilters.age.has(2);
+        const desires = isYouthRoot ? ROOT_YOUTH : ROOT_ALL;
+        panel.style.display = 'flex';
+        let html = `<div class="insight-title" style="margin-top:12px">Top Influenced Desires</div>`;
+        html += `<div class="insight-section open" data-key="desire">
+            <div class="insight-section-body open"></div></div>`;
+        panel.innerHTML = html;
+        const body = panel.querySelector('.insight-section-body');
+        const ol = document.createElement('ol');
+        ol.style.cssText = 'margin:0;padding-left:14px;display:flex;flex-direction:column;gap:7px';
+        body.appendChild(ol);
+        renderInsightSection(ol, desires, 'desire');
         return;
     }
 
