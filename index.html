@@ -2812,6 +2812,8 @@ let activeDesire = null;
 let deepAnalysisMode = false;
 let deepRevealProgress = -1;   // -1 = inactive, 0→1 = animating, 1 = done
 let deepRevealStartTime = 0;
+let deepReversing = false;
+let labelFadeStart = 0;
 const DEEP_REVEAL_DURATION = 2000; // 2s sweep
 let desireViewOwnerPath = [];
 let narrativeViewMode = false;
@@ -3504,7 +3506,10 @@ function draw() {
 
     // ==================== DEEP ANALYSIS STACKED LAYERS ====================
     const savedMarginRight = MARGIN.right;
-    if (deepAnalysisMode && desireViewMode && activeDesire) MARGIN.right = 190;
+    if (deepAnalysisMode && desireViewMode && activeDesire) {
+        const marginProgress = deepRevealProgress >= 1 ? 1 : Math.max(0, deepRevealProgress);
+        MARGIN.right = 30 + (190 - 30) * marginProgress;
+    }
     const deepRevealing = deepAnalysisMode && deepRevealProgress >= 0 && deepRevealProgress < 1;
     const deepRevealed  = deepAnalysisMode && deepRevealProgress >= 1;
     const revealX = deepRevealing ? MARGIN.left + deepRevealProgress * chartW() : 0;
@@ -3670,10 +3675,17 @@ function draw() {
                 }
                 ctx.restore();
             }
-            drawRightLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot', '#fca5a5');
-            drawRightLabel(yRussia, yChina, 'RUSSIA', 'Algorithm Attack', 'russia', '#93c5fd');
-            drawRightLabel(yChina, yNat, 'CHINA', 'Algorithmic manipulation', 'china', '#fbbf24');
-            drawRightLabel(yNat, yZero, 'Natural', null, null, '#94a3b8');
+            // Fade-in labels after reveal completes
+            if (deepRevealed && !labelFadeStart) labelFadeStart = performance.now();
+            const labelAlpha = deepRevealed ? Math.min(1, (performance.now() - labelFadeStart) / 400) : (deepReversing ? Math.max(0, deepRevealProgress) : 0);
+            if (labelAlpha > 0) {
+                ctx.globalAlpha = labelAlpha;
+                drawRightLabel(yAgg, yRussia, 'BOTS', 'Bots & influence campaign', 'bot', '#fca5a5');
+                drawRightLabel(yRussia, yChina, 'RUSSIA', 'Algorithm Attack', 'russia', '#93c5fd');
+                drawRightLabel(yChina, yNat, 'CHINA', 'Algorithmic manipulation', 'china', '#fbbf24');
+                drawRightLabel(yNat, yZero, 'Natural', null, null, '#94a3b8');
+                ctx.globalAlpha = 1;
+            }
 
             // -- End clip and draw metallic scan line --
             if (deepRevealing) {
@@ -5028,7 +5040,7 @@ function buildInsightPanel() {
 
     panel.style.display = 'flex';
     const top = Math.min(5, allDesires.length);
-    let html = `<div class="insight-title" style="margin-top:12px">Top Desires</div>`;
+    let html = `<div class="insight-title" style="margin-top:12px">Top Influenced Desires</div>`;
     html += `<div class="insight-section open" data-key="desire">
         <div class="insight-section-body open"></div>
     </div>`;
@@ -5224,7 +5236,12 @@ function animate(now) {
         }
     }
     // Deep analysis reveal animation
-    if (deepRevealProgress >= 0 && deepRevealProgress < 1) {
+    if (deepReversing) {
+        if (!deepRevealStartTime) deepRevealStartTime = now;
+        let t = (now - deepRevealStartTime) / 800;
+        if (t >= 1) { deepReversing = false; deepAnalysisMode = false; deepRevealProgress = -1; }
+        else { deepRevealProgress = 1 - (t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2); }
+    } else if (deepRevealProgress >= 0 && deepRevealProgress < 1) {
         if (!deepRevealStartTime) deepRevealStartTime = now;
         let t = (now - deepRevealStartTime) / DEEP_REVEAL_DURATION;
         if (t >= 1) { t = 1; deepRevealProgress = 1; }
@@ -5252,12 +5269,17 @@ document.getElementById('timeSlider').addEventListener('input', onSliderInput);
 document.getElementById('deepAnalysisBtn').addEventListener('click', () => {
     if (!desireViewMode || !activeDesire) return;
     if (activeDesire.label !== "🙎🏻‍♂️ I don't want to join IDF") return;
-    deepAnalysisMode = !deepAnalysisMode;
-    if (deepAnalysisMode) {
+    if (!deepAnalysisMode) {
+        deepAnalysisMode = true;
+        deepReversing = false;
         deepRevealProgress = 0;
         deepRevealStartTime = 0;
+        labelFadeStart = 0;
     } else {
-        deepRevealProgress = -1;
+        // Start reverse animation
+        deepReversing = true;
+        deepRevealStartTime = 0;
+        labelFadeStart = 0;
     }
     draw();
 });
