@@ -235,19 +235,19 @@
         .filter-reset {
             display: none;
             align-items: center;
-            background: transparent;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(100, 116, 139, 0.25);
+            border: none;
             border-radius: 20px;
             padding: 5px 12px;
             font-size: 0.75rem;
             font-family: inherit;
-            color: #f87171;
+            color: #e2e8f0;
             cursor: pointer;
             transition: all 0.2s;
         }
         .filter-reset:hover {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(100, 116, 139, 0.45);
+            color: #fff;
         }
         .filter-reset.visible { display: inline-flex; }
         .filter-sample-size {
@@ -402,12 +402,12 @@
             align-items: center;
             gap: 4px;
             margin-bottom: 12px;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             line-height: 1.4;
         }
 
         .breadcrumb-nav .bc-step {
-            color: #6b7280;
+            color: #94a3b8;
             cursor: pointer;
             transition: color 0.15s;
             background: none;
@@ -417,13 +417,13 @@
             font-size: inherit;
         }
 
-        .breadcrumb-nav .bc-step:hover { color: #d1d5db; }
+        .breadcrumb-nav .bc-step:hover { color: #f1f5f9; }
 
-        .breadcrumb-nav .bc-sep { color: #2d3748; }
+        .breadcrumb-nav .bc-sep { color: #3b82f6; }
 
-        .breadcrumb-nav .bc-current { color: #9ca3af; }
+        .breadcrumb-nav .bc-current { color: #e2e8f0; }
 
-        .breadcrumb-nav.bc-small { font-size: 0.62rem; gap: 2px; margin-bottom: 8px; }
+        .breadcrumb-nav.bc-small { font-size: 0.85rem; gap: 3px; margin-bottom: 8px; }
 
         canvas#mainChart {
             width: 100% !important;
@@ -614,7 +614,7 @@
     <div class="sidebar-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
     </div>
-    <div class="sidebar-icon">
+    <div class="sidebar-icon" id="shortcutDesireBtn" title="Pre-Draft Youth: I don't want to join IDF">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     </div>
 </div>
@@ -4798,7 +4798,6 @@ function buildLegend() {
         const cleanLabel = activeDesire.label.replace(/^[\p{Emoji}\p{Emoji_Component}\u200D\uFE0F\u200B]+\s*/u, '');
         html += `<span class="bc-sep">›</span><span class="bc-current">Desire: ${cleanLabel}</span>`;
         html += '</div>';
-        html += `<div class="desire-view-title">${activeDesire.label}</div>`;
         // Influencing narratives with values and deltas
         html += '<div style="margin:14px 0 6px;font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Influencing Narratives</div>';
         const displayNarrs = [...rising.map(n => ({ ...n, dir: 'up' })), ...declining.map(n => ({ ...n, dir: 'down' }))];
@@ -4884,9 +4883,7 @@ function buildLegend() {
         }
         document.getElementById('pageTitle').textContent = 'TikTok Trends: ' + parts[parts.length - 1];
     } else {
-        const filterLabel = getFilterLabel();
-        document.getElementById('pageTitle').textContent =
-            filterLabel ? filterLabel + ' — Content Distribution' : 'TikTok Trends';
+        document.getElementById('pageTitle').textContent = 'TikTok Trends';
     }
     buildInsightPanel();
 }
@@ -5262,6 +5259,26 @@ document.getElementById('deepAnalysisBtn').addEventListener('click', () => {
     draw();
 });
 updateSliderTrack();
+
+document.getElementById('shortcutDesireBtn').addEventListener('click', () => {
+    // Set age filter to 17-22 (index 2)
+    for (const f of FILTERS) activeFilters[f.key].clear();
+    activeFilters.age.add(2);
+    renderFilterBar();
+    // Drill to Current Affairs → Security → IDF Service
+    desireViewMode = false; activeDesire = null;
+    narrativeViewMode = false; activeNarrativeIdx = null;
+    drilldownPath = [2, 0, 5]; // Current Affairs, Security, IDF Service
+    generateData(); buildLegend();
+    // Find and enter desire view
+    const active = getActiveSeries();
+    for (const child of active) {
+        if (!child.insights || !child.insights.desire) continue;
+        const d = child.insights.desire.find(d => d.label === "🙎🏻‍♂️ I don't want to join IDF");
+        if (d) { enterDesireView(d); return; }
+    }
+    draw();
+});
 
 renderFilterBar();
 resize();
