@@ -3600,20 +3600,27 @@ function draw() {
                 xs.push(xForIndex(i));
                 aggVals.push(v);
                 // Layers split WITHIN aggVals: Natural < China < Russia < Bots = aggVals
-                // Contamination flat until ~1 month ago (t≈0.55), then ramps up
+                // Contamination: flat until ~1 month ago, then ramps up. Never decreasing.
                 const tRamp = 0.55; // ~1 month ago
+                let natV, chiV, rusV;
                 if (t <= tRamp) {
-                    // Flat: fixed low contamination ratios
-                    natVals.push(v * 0.82);
-                    chinaVals.push(v * 0.87);
-                    russiaVals.push(v * 0.92);
+                    natV = v * 0.82;
+                    chiV = v * 0.87;
+                    rusV = v * 0.92;
                 } else {
-                    // Ramp up: contamination grows from flat level to full
-                    const p = (t - tRamp) / (1 - tRamp); // 0→1
-                    natVals.push(v * (0.82 - 0.67 * p));   // 0.82 → 0.15
-                    chinaVals.push(v * (0.87 - 0.47 * p));  // 0.87 → 0.40
-                    russiaVals.push(v * (0.92 - 0.20 * p)); // 0.92 → 0.72
+                    const p = (t - tRamp) / (1 - tRamp);
+                    natV = v * (0.82 - 0.67 * p);
+                    chiV = v * (0.87 - 0.47 * p);
+                    rusV = v * (0.92 - 0.20 * p);
                 }
+                // Enforce monotonic non-decreasing (never dip)
+                if (natVals.length > 0) natV = Math.max(natV, natVals[natVals.length - 1]);
+                if (chinaVals.length > 0) chiV = Math.max(chiV, chinaVals[chinaVals.length - 1]);
+                if (russiaVals.length > 0) rusV = Math.max(rusV, russiaVals[russiaVals.length - 1]);
+                // Cap at aggVals
+                natVals.push(Math.min(natV, v));
+                chinaVals.push(Math.min(chiV, v));
+                russiaVals.push(Math.min(rusV, v));
                 // botsVals = aggVals (top layer goes to the white line)
             }
             function fillBand(xArr, bot, top, color, alpha) {
