@@ -2809,6 +2809,7 @@ const SCAN_CYCLE = SCAN_SWEEP + SCAN_PAUSE + SCAN_SWEEP + SCAN_PAUSE; // 18s tot
 let drilldownPath = [];
 let desireViewMode = false;
 let activeDesire = null;
+const DESIRE_EXPOSURE_SCALE = 5; // internal value × 5 = thousands of exposures
 let deepAnalysisMode = false;
 let deepRevealProgress = -1;   // -1 = inactive, 0→1 = animating, 1 = done
 let deepRevealStartTime = 0;
@@ -3502,6 +3503,54 @@ function draw() {
         ctx.fillText(Math.round(v) + '%', MARGIN.left - 8, y + 4);
     }
 
+    // ==================== DESIRE NARRATIVE ZONE (bottom 20%) ====================
+    let narrZoneTop = 0, narrZoneBot = 0, narrMax = 1;
+    if (desireViewMode && activeDesire) {
+        narrZoneTop = yForValue(20);  // pixel Y at 20%
+        narrZoneBot = yForValue(0);   // pixel Y at 0%
+        // Compute narrMax from visible narrative streams (exclude aggregate = last stream)
+        const narrCount = activeDesire.narratives.length;
+        narrMax = 0;
+        for (let si = 0; si < narrCount; si++) {
+            const stream = dataStreams[si];
+            if (!stream) continue;
+            for (let i = offset; i < offset + VISIBLE_POINTS && i < stream.length; i++)
+                if (stream[i] > narrMax) narrMax = stream[i];
+        }
+        if (narrMax < 1) narrMax = 1;
+        narrMax *= 1.1; // 10% padding
+
+        // K tick marks on right side of narrative zone
+        ctx.save();
+        const kStepCount = 3;
+        for (let k = 0; k <= kStepCount; k++) {
+            const rawV = narrMax * k / kStepCount;
+            const frac = rawV / narrMax;
+            const y = narrZoneBot - frac * (narrZoneBot - narrZoneTop);
+            const label = Math.round(rawV * DESIRE_EXPOSURE_SCALE) + 'K';
+            // Grid line
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(MARGIN.left + chartW(), y); ctx.stroke();
+            // Label on right
+            ctx.fillStyle = '#64748b';
+            ctx.font = '10px system-ui';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, MARGIN.left + chartW() + 4, y + 3);
+        }
+        // Dashed separator at 20%
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(MARGIN.left, narrZoneTop); ctx.lineTo(MARGIN.left + chartW(), narrZoneTop); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+    }
+    function yForNarrative(v) {
+        const frac = Math.max(0, v) / narrMax;
+        return narrZoneBot - frac * (narrZoneBot - narrZoneTop);
+    }
+
     // ==================== DEEP ANALYSIS MARGIN ====================
     const savedMarginRight = MARGIN.right;
     const deepRevealing = deepAnalysisMode && deepRevealProgress >= 0 && deepRevealProgress < 1 && (!deepReversing || deepReversePhase === 3);
@@ -3781,7 +3830,8 @@ function draw() {
         for (let i = 0; i < VISIBLE_POINTS; i++) {
             const idx = offset + i;
             if (idx >= dataStreams[si].length) break;
-            pts.push({ x: xForIndex(i), y: yForValue(dataStreams[si][idx]) });
+            const yFn = (desireViewMode && !isAgg) ? yForNarrative : yForValue;
+            pts.push({ x: xForIndex(i), y: yFn(dataStreams[si][idx]) });
         }
         if (pts.length === 0) return;
 
@@ -4042,7 +4092,7 @@ function draw() {
             const vLo = da.stream[lo], vHi = da.stream[Math.min(hi, da.stream.length - 1)];
             if (vLo == null) return;
             const v = lo === hi ? vLo : vLo + (vHi - vLo) * (fi - lo);
-            const y = MARGIN.top + (1 - v / 100) * chartH();
+            const y = yForNarrative(v);
             ctx.beginPath();
             ctx.arc(snapX, y, 4, 0, Math.PI * 2);
             ctx.fillStyle = da.color;
@@ -4769,7 +4819,9 @@ function updateLegendValues(values, total) {
     items.forEach((item, i) => {
         const small = item.querySelector('small.legend-pct');
         if (small && i < values.length) {
-            small.textContent = Math.round((values[i] / total) * 100) + '%';
+            small.textContent = desireViewMode
+                ? Math.round(values[i] * DESIRE_EXPOSURE_SCALE) + 'K'
+                : Math.round((values[i] / total) * 100) + '%';
             small.style.color = '#d1d5db';
         }
     });
@@ -4854,16 +4906,18 @@ function buildLegend() {
         const displayNarrs = [...rising.map(n => ({ ...n, dir: 'up' })), ...declining.map(n => ({ ...n, dir: 'down' }))];
         displayNarrs.forEach((n, i) => {
             const stream = dataStreams[i];
-            const curVal = stream ? Math.round(stream[Math.min(TODAY_IDX, stream.length - 1)] * 10) / 10 : n.base;
-            const startVal = stream ? stream[0] : n.base;
-            const d = Math.round(curVal - startVal);
-            const deltaColor = d > 0 ? '#22c55e' : d < 0 ? '#ef4444' : '#6b7280';
-            const deltaArrow = d > 0 ? '↑' : d < 0 ? '↓' : '';
-            const deltaSign = d > 0 ? '+' : '';
+            const curRaw = stream ? stream[Math.min(TODAY_IDX, stream.length - 1)] : n.base;
+            const startRaw = stream ? stream[0] : n.base;
+            const curK = Math.round(curRaw * DESIRE_EXPOSURE_SCALE);
+            const startK = Math.round(startRaw * DESIRE_EXPOSURE_SCALE);
+            const pctChange = startK > 0 ? Math.round((curK - startK) / startK * 100) : 0;
+            const deltaColor = pctChange > 0 ? '#22c55e' : pctChange < 0 ? '#ef4444' : '#6b7280';
+            const deltaArrow = pctChange > 0 ? '↑' : pctChange < 0 ? '↓' : '';
+            const deltaSign = pctChange > 0 ? '+' : '';
             const boxColor = dataColors[i] || SERIES_COLORS[i % SERIES_COLORS.length];
             html += `<div class="legend-item">
                 <div class="legend-color" style="background:${boxColor}"></div>
-                <span>${n.name} <small class="legend-pct" style="color:#6b7280;font-size:0.7rem">${Math.round(curVal)}%</small> <small class="legend-delta" style="color:${deltaColor}">${deltaArrow}${deltaSign}${d}%</small></span>
+                <span>${n.name} <small class="legend-pct" style="color:#6b7280;font-size:0.7rem">${curK}K</small> <small class="legend-delta" style="color:${deltaColor}">${deltaArrow}${deltaSign}${pctChange}%</small></span>
             </div>`;
         });
         el.innerHTML = html;
