@@ -5224,6 +5224,143 @@ function buildInsightPanel() {
         return;
     }
 
+    // ── Current Affairs Top Influenced Desires ──
+    if (drilldownPath.length === 1 && drilldownPath[0] === 2) {
+        const isYouthCA = activeFilters.age.has(2);
+
+        const CURRENT_ALL = [
+            {
+                label: '🏛️ I want government to cap grocery prices',
+                narratives: [
+                    { name: 'TikTok exposes Israeli grocery markup vs Europe', base: 12 },
+                    { name: 'Viral supermarket receipt comparisons shock viewers', base: 10 },
+                    { name: 'Food bloggers show how to eat cheap in Israel', base: 9 },
+                    { name: 'Knesset members pressured by cost of living videos', base: 7 },
+                    { name: 'Grocery boycott movements gain traction on TikTok', base: 5 }
+                ],
+                opinion: [35, 24, 17, 11, 7, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to renovate my bomb shelter',
+                narratives: [
+                    { name: 'Post-strike shelter inspection videos go viral locally', base: 12 },
+                    { name: 'Israelis film crumbling shelters in residential buildings', base: 10 },
+                    { name: 'DIY shelter renovation tutorials trend on TikTok', base: 9 },
+                    { name: 'Contractors offer TikTok-sourced shelter upgrade packages', base: 7 },
+                    { name: 'Families share before-after shelter transformation stories', base: 5 }
+                ],
+                opinion: [30, 25, 18, 13, 8, 4, 2]
+            },
+            {
+                label: '🏛️ I want police to end protection rackets',
+                narratives: [
+                    { name: 'Hidden camera exposés of protection rackets go viral', base: 12 },
+                    { name: 'Small business owners film extortion threats publicly', base: 10 },
+                    { name: 'Crime family TikTok accounts flaunt wealth brazenly', base: 9 },
+                    { name: 'Vigilante neighborhood patrol videos gain massive views', base: 7 },
+                    { name: 'Police response time comparisons spark public outrage', base: 5 }
+                ],
+                opinion: [32, 23, 18, 13, 8, 4, 2]
+            },
+            {
+                label: '🏛️ I want Knesset to pass the budget',
+                narratives: [
+                    { name: 'TikTok explainers show how no budget hurts citizens', base: 12 },
+                    { name: 'Coalition crisis memes dominate Israeli political TikTok', base: 10 },
+                    { name: 'Teachers film overcrowded classrooms blaming frozen budgets', base: 9 },
+                    { name: 'Hospital staff share understaffing videos citing budget cuts', base: 7 },
+                    { name: 'Citizens challenge MKs in viral TikTok confrontations', base: 5 }
+                ],
+                opinion: [28, 24, 19, 14, 9, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to volunteer for civil defense',
+                narratives: [
+                    { name: 'Civilian first-responder training videos inspire thousands', base: 12 },
+                    { name: 'Post-strike volunteer stories go viral on TikTok', base: 10 },
+                    { name: 'ZAKA and Magen David Adom recruit via TikTok', base: 9 },
+                    { name: 'Neighborhood emergency teams share preparation drills publicly', base: 7 },
+                    { name: 'Volunteer sign-ups spike 400% after viral emergency clips', base: 5 }
+                ],
+                opinion: [33, 22, 18, 13, 8, 4, 2]
+            }
+        ];
+
+        const CURRENT_YOUTH = [
+            {
+                label: '🙎🏻‍♂️ I want to join the protest movement',
+                narratives: [
+                    { name: 'Students film mass protest marches from drone angles', base: 12 },
+                    { name: 'Young activists go viral confronting politicians on street', base: 10 },
+                    { name: 'Protest sign design tutorials trend on creative TikTok', base: 9 },
+                    { name: 'Police clash footage at demonstrations gets millions views', base: 7 },
+                    { name: 'Gen Z protest organizers build followings on TikTok', base: 5 }
+                ],
+                opinion: [36, 24, 16, 11, 7, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to subsidize student rent',
+                narratives: [
+                    { name: 'Students film tiny apartments costing 5000 NIS monthly', base: 12 },
+                    { name: 'Roommate horror stories dominate Israeli student TikTok', base: 10 },
+                    { name: 'Rent comparison videos show Tel Aviv vs world cities', base: 9 },
+                    { name: 'Students sleep in cars and film daily survival vlogs', base: 7 },
+                    { name: 'University dorm waitlist reveals spark outrage content', base: 5 }
+                ],
+                opinion: [34, 23, 17, 12, 8, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to feel safe on my campus',
+                narratives: [
+                    { name: 'Campus security incident videos spread fear among students', base: 12 },
+                    { name: 'Students film dark unlit paths and broken campus gates', base: 10 },
+                    { name: 'Self-defense class enrollment spikes after viral attack clips', base: 9 },
+                    { name: 'Student safety petition videos tag university accounts publicly', base: 7 },
+                    { name: 'Campus guard shortage exposed in investigative TikTok series', base: 5 }
+                ],
+                opinion: [31, 24, 18, 13, 8, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to draft all equally',
+                narratives: [
+                    { name: 'Side by side army vs yeshiva daily routine videos', base: 12 },
+                    { name: 'Soldiers film reactions to Haredi draft exemption news', base: 10 },
+                    { name: 'Equal burden protest content trends among young Israelis', base: 9 },
+                    { name: 'Comedy skits mock draft inequality get millions views', base: 7 },
+                    { name: 'Pre-draft teens debate service fairness in TikTok duets', base: 5 }
+                ],
+                opinion: [33, 23, 18, 12, 8, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to move abroad after army',
+                narratives: [
+                    { name: 'Post-army Berlin and Lisbon relocation vlogs go viral', base: 12 },
+                    { name: 'Young Israelis compare salaries abroad vs Israel on camera', base: 10 },
+                    { name: 'Passport office lines and visa tips dominate young TikTok', base: 9 },
+                    { name: 'Expat Israelis film quality of life abroad daily', base: 7 },
+                    { name: 'Moving abroad checklist videos hit millions of views', base: 5 }
+                ],
+                opinion: [29, 24, 19, 14, 8, 4, 2]
+            }
+        ];
+
+        const caDesires = isYouthCA ? CURRENT_YOUTH : CURRENT_ALL;
+
+        panel.style.display = 'flex';
+        let html = `<div class="insight-title" style="margin-top:12px">Top Influenced Desires</div>`;
+        html += `<div class="insight-section open" data-key="desire">
+            <div class="insight-section-body open"></div>
+        </div>`;
+        panel.innerHTML = html;
+
+        const body = panel.querySelector('.insight-section-body');
+        const ol = document.createElement('ol');
+        ol.style.cssText = 'margin:0;padding-left:14px;display:flex;flex-direction:column;gap:7px';
+        body.appendChild(ol);
+        renderInsightSection(ol, caDesires, 'desire');
+        return;
+    }
+
     // Parent-level: collect desires from children that have insights
     const active = getActiveSeries();
     const allDesires = [];
