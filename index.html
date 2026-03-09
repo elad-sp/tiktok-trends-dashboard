@@ -4147,11 +4147,9 @@ function draw() {
     }
 
     if (desireViewMode && activeDesire) {
-        // Toggle pie vs bar canvas
+        // Show bar canvas alongside pie in offline mode
         const _barC = document.getElementById('barCanvas');
-        const _pieC = document.getElementById('pieCanvas');
         if (_barC) _barC.style.display = offlineMode ? 'block' : 'none';
-        if (_pieC) _pieC.style.display = offlineMode ? 'none' : 'block';
 
         const aggSi = activeDesire.narratives.length;
         const aggY = yForValue(getValueAtFloat(aggSi, floatIdx));
@@ -4166,11 +4164,8 @@ function draw() {
             unsure:    Math.round(a.unsure    * (1 - f) + b.unsure    * f),
             disagrees: Math.round(a.disagrees * (1 - f) + b.disagrees * f),
         };
-        if (offlineMode) {
-            drawBarChart(floatIdx, values);
-        } else {
-            drawDesirePie(snapX, aggY, opAtPoint);
-        }
+        drawDesirePie(snapX, aggY, opAtPoint);
+        if (offlineMode) drawBarChart(floatIdx, values);
         // Update desire legend values at hover/scan position
         const narrCount = activeDesire.narratives.length;
         const narrValues = values.slice(0, narrCount);
