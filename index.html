@@ -3508,6 +3508,11 @@ function draw() {
     if (desireViewMode && activeDesire) {
         narrZoneTop = yForValue(20);  // pixel Y at 20%
         narrZoneBot = yForValue(0);   // pixel Y at 0%
+        // Zone backgrounds
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
+        ctx.fillRect(MARGIN.left, MARGIN.top, chartW(), narrZoneTop - MARGIN.top);
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.25)';
+        ctx.fillRect(MARGIN.left, narrZoneTop, chartW(), narrZoneBot - narrZoneTop);
         // Compute narrMax from visible narrative streams (exclude aggregate = last stream)
         const narrCount = activeDesire.narratives.length;
         narrMax = 0;
