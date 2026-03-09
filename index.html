@@ -114,8 +114,9 @@
         .pie-container {
             flex: 3;
             display: flex;
-            align-items: flex-start;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
             min-width: 0;
             padding: 10px;
         }
@@ -127,7 +128,8 @@
         #barCanvas {
             width: 100%;
             max-width: 400px;
-            aspect-ratio: 1;
+            aspect-ratio: 5 / 3;
+            margin-top: 8px;
         }
         #pieTooltip {
             position: fixed;
@@ -399,6 +401,9 @@
             position: relative;
             flex: 7;
             min-width: 0;
+        }
+        .charts-area.offline-mode .chart-container {
+            min-height: 520px;
         }
 
         .breadcrumb-nav {
@@ -4147,9 +4152,11 @@ function draw() {
     }
 
     if (desireViewMode && activeDesire) {
-        // Show bar canvas alongside pie in offline mode
+        // Show bar canvas below pie in offline mode
         const _barC = document.getElementById('barCanvas');
         if (_barC) _barC.style.display = offlineMode ? 'block' : 'none';
+        const _chartsArea = document.querySelector('.charts-area');
+        if (_chartsArea) _chartsArea.classList.toggle('offline-mode', offlineMode);
 
         const aggSi = activeDesire.narratives.length;
         const aggY = yForValue(getValueAtFloat(aggSi, floatIdx));
@@ -4600,7 +4607,7 @@ function drawBarChart(floatIdx, values) {
         _barSmooth[i] += (narrValues[i] - _barSmooth[i]) * lerpFactor;
     }
 
-    const padTop = 30, padBot = 50;
+    const padTop = 22, padBot = 40;
     const barAreaH = bh - padTop - padBot;
     const gap = 14;
     const barW = (bw - gap * (count + 1)) / count;
@@ -4933,6 +4940,8 @@ function enterDesireView(desire) {
 
 function exitDesireView() {
     offlineMode = false;
+    const _ca = document.querySelector('.charts-area');
+    if (_ca) _ca.classList.remove('offline-mode');
     desireViewMode = false;
     activeDesire = null;
     deepAnalysisMode = false;
@@ -6064,10 +6073,12 @@ function initPieCanvas() {
     pieCanvas.style.height = size + 'px';
     const barC = document.getElementById('barCanvas');
     if (barC) {
-        barC.width = size * dpr;
-        barC.height = size * dpr;
-        barC.style.width = size + 'px';
-        barC.style.height = size + 'px';
+        const barW = size;
+        const barH = Math.round(size * 3 / 5);
+        barC.width = barW * dpr;
+        barC.height = barH * dpr;
+        barC.style.width = barW + 'px';
+        barC.style.height = barH + 'px';
     }
 }
 
