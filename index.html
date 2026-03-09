@@ -4070,7 +4070,8 @@ function draw() {
         if (deepAnalysisMode && desireViewMode && !s.isDesireAggregate) {
             if (deepRevealed || (deepRevealing && snapX <= revealX)) return;
         }
-        const y = yForValue(val);
+        const isAgg = desireViewMode && s.isDesireAggregate;
+        const y = (desireViewMode && !isAgg) ? yForNarrative(val) : yForValue(val);
         const hc = dataColors[si] || s.color;
         ctx.beginPath();
         ctx.arc(snapX, y, 5, 0, Math.PI * 2);
