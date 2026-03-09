@@ -1472,7 +1472,7 @@ const SERIES = [
                         ]
                       },
                       {
-                        label: "🙎🏻‍♂️ I want to see Iran become democratic",
+                        label: "🏛️ I want government to support Iranian people",
                         narratives: [
                           { name: 'Revolutionary council forms in northern Iran',         base: 11, color: '#1e3a8a' },
                           { name: 'Iranian diaspora returns to lead the transition',      base: 10, color: '#2563eb' },
@@ -4478,9 +4478,11 @@ function drawPieAtCursor(cx, cursorY, values) {
             const emojiMatch = active[i].name.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u);
             const emoji = emojiMatch ? emojiMatch[0] : '';
             if (emoji) {
+                if (emoji !== '🎵') pieCtx.globalAlpha = 0.5;
                 pieCtx.font = (fontSize - 2) + 'px system-ui';
                 pieCtx.textBaseline = 'middle';
                 pieCtx.fillText(emoji, lx, ly - fontSize * 0.7);
+                pieCtx.globalAlpha = 1;
             }
             pieCtx.font = 'bold ' + fontSize + 'px system-ui';
             pieCtx.textBaseline = 'middle';
@@ -5358,6 +5360,280 @@ function buildInsightPanel() {
         ol.style.cssText = 'margin:0;padding-left:14px;display:flex;flex-direction:column;gap:7px';
         body.appendChild(ol);
         renderInsightSection(ol, caDesires, 'desire');
+        return;
+    }
+
+    // ── Security Top Influenced Desires ──
+    if (drilldownPath.length === 2 && drilldownPath[0] === 2 && drilldownPath[1] === 0) {
+        const isYouthSec = activeFilters.age.has(2);
+
+        const SECURITY_ALL = [
+            {
+                label: '🏛️ I want IDF to topple Iran\u2019s regime',
+                narratives: [
+                    { name: 'Post-strike victory content floods Israeli TikTok feeds', base: 12 },
+                    { name: 'Military analysts explain regime change scenarios on camera', base: 10 },
+                    { name: 'Soldiers celebrate strike success in viral base videos', base: 9 },
+                    { name: 'Iranian exile creators call for revolution on TikTok', base: 7 },
+                    { name: 'Hashtag ToppleTheRegime trends number one in Israel', base: 5 }
+                ],
+                opinion: [36, 24, 17, 11, 6, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to bring hostages home',
+                narratives: [
+                    { name: 'Hostage families post daily countdown videos on TikTok', base: 12 },
+                    { name: 'Yellow ribbon challenge goes viral across Israeli creators', base: 10 },
+                    { name: 'Released hostages share testimonies viewed millions of times', base: 9 },
+                    { name: 'Protest vigils livestreamed nightly from Hostage Square', base: 7 },
+                    { name: 'Global TikTok duets amplify bring them home message', base: 5 }
+                ],
+                opinion: [34, 25, 18, 11, 7, 3, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to improve my nearest shelter',
+                narratives: [
+                    { name: 'Post-strike shelter inspection videos go viral locally', base: 12 },
+                    { name: 'Israelis film crumbling public shelters in their buildings', base: 10 },
+                    { name: 'DIY shelter upgrade tutorials trend on Israeli TikTok', base: 9 },
+                    { name: 'Families compare shelter conditions across neighborhoods online', base: 7 },
+                    { name: 'Shelter supply haul videos spike after every siren', base: 5 }
+                ],
+                opinion: [30, 24, 19, 13, 8, 4, 2]
+            },
+            {
+                label: '🏛️ I want IDF to secure the northern border',
+                narratives: [
+                    { name: 'Northern residents film Hezbollah positions from backyards', base: 12 },
+                    { name: 'Evacuee families document displacement life on TikTok', base: 10 },
+                    { name: 'IDF northern operation footage gets millions of views', base: 9 },
+                    { name: 'Border town ghost town videos spark public outrage', base: 7 },
+                    { name: 'Return home campaigns by northerners trend nationally', base: 5 }
+                ],
+                opinion: [32, 23, 18, 13, 8, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to return to work soon',
+                narratives: [
+                    { name: 'Small business owners film empty shops during escalation', base: 12 },
+                    { name: 'Freelancers share income loss breakdowns on TikTok', base: 10 },
+                    { name: 'Work from shelter setup videos become relatable content', base: 9 },
+                    { name: 'Employers post flexible war-time policy announcements online', base: 7 },
+                    { name: 'Economic anxiety content rises with each security round', base: 5 }
+                ],
+                opinion: [28, 25, 19, 14, 8, 4, 2]
+            }
+        ];
+
+        const SECURITY_YOUTH = [
+            {
+                label: '🙎🏻‍♂️ I don\u2019t want to join the IDF',
+                narratives: [
+                    { name: 'Pre-draft teens share anxiety videos before enlistment', base: 12 },
+                    { name: 'Viral debates on dodging vs serving split young TikTok', base: 10 },
+                    { name: 'Combat injury stories make teens question military path', base: 9 },
+                    { name: 'Alternative service options explained by young creators', base: 7 },
+                    { name: 'Draft day crying videos get millions of views', base: 5 }
+                ],
+                opinion: [34, 23, 17, 12, 8, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to feel safe at festivals',
+                narratives: [
+                    { name: 'October 7 survivor testimonies haunt young Israeli TikTok', base: 12 },
+                    { name: 'Festival security check videos become pre-event ritual', base: 10 },
+                    { name: 'Young Israelis debate whether outdoor events are safe', base: 9 },
+                    { name: 'Party cancellation announcements go viral with sad reactions', base: 7 },
+                    { name: 'Safe room location content trends before every holiday', base: 5 }
+                ],
+                opinion: [33, 24, 18, 12, 7, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to end the war already',
+                narratives: [
+                    { name: 'Young protesters film anti-war marches from front lines', base: 12 },
+                    { name: 'Soldiers on leave share exhaustion videos on TikTok', base: 10 },
+                    { name: 'Student activists demand ceasefire in campus rally clips', base: 9 },
+                    { name: 'War fatigue memes dominate young Israeli humor content', base: 7 },
+                    { name: 'Peace wishlist videos trend among Gen Z creators', base: 5 }
+                ],
+                opinion: [36, 23, 17, 11, 7, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to pay soldiers fairly',
+                narratives: [
+                    { name: 'Soldiers compare combat pay to minimum wage on camera', base: 12 },
+                    { name: 'Reservist expense breakdowns shock young TikTok viewers', base: 10 },
+                    { name: 'Viral petition for soldier salary increase spreads fast', base: 9 },
+                    { name: 'Discharged soldiers show empty bank accounts on video', base: 7 },
+                    { name: 'Pay gap between officers and combat troops exposed', base: 5 }
+                ],
+                opinion: [31, 24, 18, 13, 8, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to donate food to soldiers',
+                narratives: [
+                    { name: 'Cooking for soldiers challenge goes viral among teens', base: 12 },
+                    { name: 'Base delivery surprise videos get millions of views', base: 10 },
+                    { name: 'Young bakers film mass cookie batches for combat units', base: 9 },
+                    { name: 'Restaurant donation campaigns promoted by teen influencers', base: 7 },
+                    { name: 'Soldier thank you reaction videos warm Israeli TikTok', base: 5 }
+                ],
+                opinion: [35, 22, 17, 12, 8, 4, 2]
+            }
+        ];
+
+        const secDesires = isYouthSec ? SECURITY_YOUTH : SECURITY_ALL;
+
+        panel.style.display = 'flex';
+        let html = `<div class="insight-title" style="margin-top:12px">Top Influenced Desires</div>`;
+        html += `<div class="insight-section open" data-key="desire">
+            <div class="insight-section-body open"></div>
+        </div>`;
+        panel.innerHTML = html;
+
+        const body = panel.querySelector('.insight-section-body');
+        const ol = document.createElement('ol');
+        ol.style.cssText = 'margin:0;padding-left:14px;display:flex;flex-direction:column;gap:7px';
+        body.appendChild(ol);
+        renderInsightSection(ol, secDesires, 'desire');
+        return;
+    }
+
+    // ── Iran Top Influenced Desires ──
+    if (drilldownPath.length === 3 && drilldownPath[0] === 2 && drilldownPath[1] === 0 && drilldownPath[2] === 0) {
+        const isYouthIran = activeFilters.age.has(2);
+
+        const IRAN_ALL = [
+            {
+                label: '🏛️ I want IDF to monitor Iran rebuilding',
+                narratives: [
+                    { name: 'Satellite imagery of Iran sites shared on TikTok daily', base: 12 },
+                    { name: 'OSINT creators track Iranian reconstruction in real time', base: 10 },
+                    { name: 'Military experts warn about covert rebuilding on camera', base: 9 },
+                    { name: 'Comparison videos show before-after strike damage to sites', base: 7 },
+                    { name: 'Hashtag WatchIran trends weekly among security creators', base: 5 }
+                ],
+                opinion: [33, 24, 18, 12, 7, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to confirm full disarmament',
+                narratives: [
+                    { name: 'Officials questioned about remaining threats in viral clips', base: 12 },
+                    { name: 'Nuclear experts debate strike effectiveness on TikTok live', base: 10 },
+                    { name: 'Underground bunker speculation content gets massive views', base: 9 },
+                    { name: 'IAEA inspection demand videos shared across Israeli feeds', base: 7 },
+                    { name: 'Verification timeline explainer videos educate thousands daily', base: 5 }
+                ],
+                opinion: [35, 23, 17, 12, 7, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to maintain US alliance',
+                narratives: [
+                    { name: 'US-Israel diplomatic body language analyzed in viral clips', base: 12 },
+                    { name: 'American military aid package breakdowns educate viewers', base: 10 },
+                    { name: 'Biden and Netanyahu meeting footage dissected frame by frame', base: 9 },
+                    { name: 'Pro-Israel US Congress speeches go viral in Hebrew subs', base: 7 },
+                    { name: 'Alliance strength polls shared as reassuring content daily', base: 5 }
+                ],
+                opinion: [30, 25, 18, 13, 8, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to stand by Israel\u2019s decision',
+                narratives: [
+                    { name: 'Patriotic post-strike celebration videos flood Israeli TikTok', base: 12 },
+                    { name: 'Flag waving content surges after successful operation clips', base: 10 },
+                    { name: 'Citizens film supportive honking convoys through cities', base: 9 },
+                    { name: 'Unity hashtag content bridges political divides temporarily', base: 7 },
+                    { name: 'International criticism response videos rally local pride', base: 5 }
+                ],
+                opinion: [37, 22, 17, 11, 7, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to improve my nearest shelter',
+                narratives: [
+                    { name: 'Post-strike shelter rating videos trend across neighborhoods', base: 12 },
+                    { name: 'Families film shelter supply checklists after Iran attack', base: 10 },
+                    { name: 'Contractors share shelter reinforcement tips on TikTok', base: 9 },
+                    { name: 'Apartment hunters now film shelter quality in listing tours', base: 7 },
+                    { name: 'Community shelter cleanup events documented and shared online', base: 5 }
+                ],
+                opinion: [29, 24, 19, 14, 8, 4, 2]
+            }
+        ];
+
+        const IRAN_YOUTH = [
+            {
+                label: '🙎🏻‍♂️ I don\u2019t want to raise kids here anymore',
+                narratives: [
+                    { name: 'Young couples film siren-during-pregnancy anxiety videos', base: 12 },
+                    { name: 'Future parents debate raising children under threat online', base: 10 },
+                    { name: 'Emigration with kids planning content surges after strikes', base: 9 },
+                    { name: 'Comparison of childhood safety across countries goes viral', base: 7 },
+                    { name: 'Crying in shelter with toddler videos break hearts online', base: 5 }
+                ],
+                opinion: [32, 24, 18, 12, 8, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to support Iranian people',
+                narratives: [
+                    { name: 'Young Israelis demand government aid Iranian civilians online', base: 12 },
+                    { name: 'Solidarity hashtags pressure officials to act on TikTok', base: 10 },
+                    { name: 'Student petitions for humanitarian aid go viral in Hebrew', base: 9 },
+                    { name: 'Creators compare Israeli aid to other nations on camera', base: 7 },
+                    { name: 'Government silence on Iran people criticized by young TikTokers', base: 5 }
+                ],
+                opinion: [33, 24, 18, 12, 7, 4, 2]
+            },
+            {
+                label: '🏛️ I want government to explain next steps',
+                narratives: [
+                    { name: 'Young Israelis demand transparency in viral question videos', base: 12 },
+                    { name: 'What happens now explainer requests flood comment sections', base: 10 },
+                    { name: 'Student unions post open letters to government on TikTok', base: 9 },
+                    { name: 'Confusion and anxiety content rises without official updates', base: 7 },
+                    { name: 'Press conference reaction videos split between trust-distrust', base: 5 }
+                ],
+                opinion: [31, 25, 18, 13, 7, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to find shelter immediately',
+                narratives: [
+                    { name: 'Siren reaction videos from dorms and campuses go viral', base: 12 },
+                    { name: 'Teens film panicked shelter runs in real time on TikTok', base: 10 },
+                    { name: 'Shelter location apps promoted by young safety creators', base: 9 },
+                    { name: 'Students without nearby shelters share vulnerable testimonies', base: 7 },
+                    { name: 'Countdown timer to shelter challenge videos spread widely', base: 5 }
+                ],
+                opinion: [35, 22, 17, 12, 8, 4, 2]
+            },
+            {
+                label: '🏛️ I want IDF to destroy all Iran missiles',
+                narratives: [
+                    { name: 'Iron Dome interception compilation videos mesmerize young viewers', base: 12 },
+                    { name: 'Military tech breakdown creators explain missile defense systems', base: 10 },
+                    { name: 'Arrow system success footage celebrated by teen creators', base: 9 },
+                    { name: 'Remaining threat assessment videos fuel anxiety among youth', base: 7 },
+                    { name: 'Strike footage analysis channels gain huge young followings', base: 5 }
+                ],
+                opinion: [33, 23, 18, 12, 8, 4, 2]
+            }
+        ];
+
+        const iranDesires = isYouthIran ? IRAN_YOUTH : IRAN_ALL;
+
+        panel.style.display = 'flex';
+        let html = `<div class="insight-title" style="margin-top:12px">Top Influenced Desires</div>`;
+        html += `<div class="insight-section open" data-key="desire">
+            <div class="insight-section-body open"></div>
+        </div>`;
+        panel.innerHTML = html;
+
+        const body = panel.querySelector('.insight-section-body');
+        const ol = document.createElement('ol');
+        ol.style.cssText = 'margin:0;padding-left:14px;display:flex;flex-direction:column;gap:7px';
+        body.appendChild(ol);
+        renderInsightSection(ol, iranDesires, 'desire');
         return;
     }
 
