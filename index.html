@@ -3433,7 +3433,7 @@ function addDataPoint() {
 }
 
 // ==================== CHART GEOMETRY ====================
-const MARGIN = { top: 10, right: 190, bottom: 40, left: 45 };
+const MARGIN = { top: 10, right: 30, bottom: 40, left: 45 };
 
 function chartW() { return (canvas.width / (window.devicePixelRatio || 1)) - MARGIN.left - MARGIN.right; }
 function chartH() { return (canvas.height / (window.devicePixelRatio || 1)) - MARGIN.top - MARGIN.bottom; }
@@ -3503,6 +3503,8 @@ function draw() {
     const bottomY = MARGIN.top + chartH();
 
     // ==================== DEEP ANALYSIS STACKED LAYERS ====================
+    const savedMarginRight = MARGIN.right;
+    if (deepAnalysisMode && desireViewMode && activeDesire) MARGIN.right = 190;
     const deepRevealing = deepAnalysisMode && deepRevealProgress >= 0 && deepRevealProgress < 1;
     const deepRevealed  = deepAnalysisMode && deepRevealProgress >= 1;
     const revealX = deepRevealing ? MARGIN.left + deepRevealProgress * chartW() : 0;
@@ -3719,6 +3721,7 @@ function draw() {
             }
         }
     }
+    MARGIN.right = savedMarginRight;
 
     getActiveSeries().forEach((s, si) => {
         const isAgg = desireViewMode && s.isDesireAggregate;
