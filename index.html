@@ -4558,6 +4558,9 @@ function drawPieAtCursor(cx, cursorY, values) {
     }
 }
 
+// Smoothed bar heights for fluid animation
+let _barSmooth = [];
+
 function drawBarChart(floatIdx, values) {
     const barCanvas = document.getElementById('barCanvas');
     if (!barCanvas || !activeDesire) return;
@@ -4574,7 +4577,28 @@ function drawBarChart(floatIdx, values) {
     const narrs = activeDesire.narratives;
     const count = narrs.length;
     const narrValues = values.slice(0, count);
-    const maxVal = Math.max(...narrValues, 1);
+
+    // Stable max: scan all time points for global max across all narratives
+    if (!drawBarChart._globalMax || drawBarChart._desire !== activeDesire) {
+        let gMax = 0;
+        for (let si = 0; si < count; si++) {
+            for (let t = 0; t < VISIBLE_POINTS; t++) {
+                const v = getValueAtFloat(si, t);
+                if (v > gMax) gMax = v;
+            }
+        }
+        drawBarChart._globalMax = gMax || 1;
+        drawBarChart._desire = activeDesire;
+        _barSmooth = narrValues.slice();
+    }
+    const maxVal = drawBarChart._globalMax;
+
+    // Smooth interpolation (lerp toward target each frame)
+    const lerpFactor = 0.12;
+    for (let i = 0; i < count; i++) {
+        if (_barSmooth[i] == null) _barSmooth[i] = narrValues[i];
+        _barSmooth[i] += (narrValues[i] - _barSmooth[i]) * lerpFactor;
+    }
 
     const padTop = 30, padBot = 50;
     const barAreaH = bh - padTop - padBot;
@@ -4582,7 +4606,7 @@ function drawBarChart(floatIdx, values) {
     const barW = (bw - gap * (count + 1)) / count;
     const startX = gap;
 
-    narrValues.forEach((val, i) => {
+    _barSmooth.forEach((val, i) => {
         const barH = Math.max(2, (val / maxVal) * barAreaH);
         const x = startX + i * (barW + gap);
         const y = padTop + barAreaH - barH;
