@@ -3600,9 +3600,14 @@ function draw() {
                 xs.push(xForIndex(i));
                 aggVals.push(v);
                 // Layers split WITHIN aggVals: Natural < China < Russia < Bots = aggVals
-                natVals.push(v * (0.35 - 0.20 * t));
-                chinaVals.push(v * (0.55 - 0.15 * t));
-                russiaVals.push(v * (0.82 - 0.10 * t));
+                // Foreign influence ramps up: half until ~1 month ago, then full
+                const ramp = t < 0.6 ? 0.5 + 0.5 * (t / 0.6) : 1.0;
+                const natR  = 1 - (1 - (0.35 - 0.20 * t)) * ramp;
+                const chiR  = 1 - (1 - (0.55 - 0.15 * t)) * ramp;
+                const rusR  = 1 - (1 - (0.82 - 0.10 * t)) * ramp;
+                natVals.push(v * natR);
+                chinaVals.push(v * chiR);
+                russiaVals.push(v * rusR);
                 // botsVals = aggVals (top layer goes to the white line)
             }
             function fillBand(xArr, bot, top, color, alpha) {
@@ -5141,26 +5146,26 @@ function buildInsightPanel() {
                 opinion: [30, 24, 19, 13, 8, 4, 2]
             },
             {
-                label: '🙎🏻‍♂️ I want to book a Sinai retreat',
+                label: '🙎🏻‍♂️ I want to binge the new reality show',
                 narratives: [
-                    { name: 'Desert yoga retreat videos captivate stressed Israelis', base: 12 },
-                    { name: 'Sinai glamping spots trend as affordable escape', base: 10 },
-                    { name: 'Wellness creators film sunrise meditation in desert', base: 9 },
-                    { name: 'Couples share romantic Sinai getaway transformations', base: 7 },
-                    { name: 'Tour operators launch TikTok-inspired retreat packages', base: 5 }
+                    { name: 'New Israeli reality season dominates TikTok reactions', base: 12 },
+                    { name: 'Contestant drama clips get millions of views overnight', base: 10 },
+                    { name: 'Watch party livestreams trend every broadcast night', base: 9 },
+                    { name: 'Fan edit compilations flood entertainment TikTok feeds', base: 7 },
+                    { name: 'Spoiler culture debates split Israeli social media daily', base: 5 }
                 ],
-                opinion: [28, 23, 19, 14, 9, 5, 2]
+                opinion: [33, 24, 18, 12, 7, 4, 2]
             },
             {
-                label: '🙎🏻‍♂️ I want to start intermittent fasting',
+                label: '🙎🏻‍♂️ I want to start running with my dog',
                 narratives: [
-                    { name: 'Israeli doctors explain fasting benefits on TikTok', base: 12 },
-                    { name: '16:8 fasting transformation videos go viral locally', base: 10 },
-                    { name: 'Meal prep for fasting becomes top food content', base: 9 },
-                    { name: 'Nutritionists debate fasting safety on live streams', base: 7 },
-                    { name: 'Fasting app downloads spike 200% in Israel', base: 5 }
+                    { name: 'Dog running duo videos dominate Israeli fitness TikTok', base: 12 },
+                    { name: 'Canicross race footage inspires pet owners to train together', base: 10 },
+                    { name: 'Park run with dogs challenge goes viral across Tel Aviv', base: 9 },
+                    { name: 'Vets explain ideal running breeds in trending tip videos', base: 7 },
+                    { name: 'Dog gear haul videos spike among active pet owners', base: 5 }
                 ],
-                opinion: [34, 22, 17, 12, 8, 5, 2]
+                opinion: [31, 23, 19, 13, 8, 4, 2]
             }
         ];
 
@@ -5179,37 +5184,37 @@ function buildInsightPanel() {
                 opinion: [35, 25, 17, 11, 7, 3, 2]
             },
             {
-                label: '🙎🏻‍♂️ I want that LED face mask',
+                label: '🙎🏻‍♂️ I want to learn the new TikTok dance',
                 narratives: [
-                    { name: 'LED mask transformation videos dominate Israeli BeautyTok', base: 12 },
-                    { name: 'Teens spend ₪800+ on devices seen on TikTok', base: 10 },
-                    { name: 'Dermatologists warn about unregulated LED devices', base: 9 },
-                    { name: 'Before-after acne content drives impulse purchases', base: 7 },
-                    { name: 'Israeli beauty influencers get sponsored LED deals', base: 5 }
+                    { name: 'New choreography challenge sweeps Israeli teen TikTok', base: 12 },
+                    { name: 'Dance tutorial creators hit millions of views overnight', base: 10 },
+                    { name: 'School hallway dance videos go viral across the country', base: 9 },
+                    { name: 'Israeli dancers add local twist to global trend on camera', base: 7 },
+                    { name: 'Dance studios report spike in teen sign-ups from TikTok', base: 5 }
+                ],
+                opinion: [34, 23, 18, 12, 7, 4, 2]
+            },
+            {
+                label: '🙎🏻‍♂️ I want to start a coding side project',
+                narratives: [
+                    { name: 'Teen coders share app builds in viral dev-log TikToks', base: 12 },
+                    { name: 'AI tool tutorials make coding accessible to beginners', base: 10 },
+                    { name: 'Israeli high schoolers win hackathons filmed for TikTok', base: 9 },
+                    { name: 'Side project income reveals inspire young tech viewers', base: 7 },
+                    { name: 'Learn to code in 30 days challenges trend among youth', base: 5 }
                 ],
                 opinion: [30, 24, 19, 13, 8, 4, 2]
             },
             {
-                label: '🙎🏻‍♂️ I want to vacation in Albania',
+                label: '🙎🏻‍♂️ I want to join a pickup football game',
                 narratives: [
-                    { name: 'Albania travel vlogs surge as budget alternative to Greece', base: 12 },
-                    { name: 'Israeli backpackers film stunning Albanian riviera beaches', base: 10 },
-                    { name: 'Flight bookings to Tirana up 300% among young Israelis', base: 9 },
-                    { name: 'TikTok creators reveal hidden Albanian mountain villages', base: 7 },
-                    { name: 'Albanian locals react to wave of Israeli tourists', base: 5 }
+                    { name: 'Street football highlight reels trend on Israeli sports TikTok', base: 12 },
+                    { name: 'Pickup game location sharing videos connect young players', base: 10 },
+                    { name: 'Skills challenge compilations filmed in local parks go viral', base: 9 },
+                    { name: 'Football culture content merges with Israeli street fashion', base: 7 },
+                    { name: 'Weekend match vlogs build communities of young ballers', base: 5 }
                 ],
-                opinion: [33, 23, 18, 12, 8, 4, 2]
-            },
-            {
-                label: '🙎🏻‍♂️ I want to try Japanese cheesecake',
-                narratives: [
-                    { name: 'Jiggly Japanese cheesecake videos mesmerize Israeli viewers', base: 12 },
-                    { name: 'Tel Aviv bakeries add Japanese cheesecake after TikTok demand', base: 10 },
-                    { name: 'Home bakers film dramatic soufflé cheesecake fails', base: 9 },
-                    { name: 'Recipe tutorial with 3 ingredients goes viral locally', base: 7 },
-                    { name: 'Japanese dessert pop-ups sell out within hours', base: 5 }
-                ],
-                opinion: [31, 24, 18, 13, 8, 4, 2]
+                opinion: [33, 22, 18, 13, 8, 4, 2]
             }
         ];
 
@@ -5418,15 +5423,15 @@ function buildInsightPanel() {
                 opinion: [32, 23, 18, 13, 8, 4, 2]
             },
             {
-                label: '🙎🏻‍♂️ I want to return to work soon',
+                label: '🏛️ I want government to end the Gaza war',
                 narratives: [
-                    { name: 'Small business owners film empty shops during escalation', base: 12 },
-                    { name: 'Freelancers share income loss breakdowns on TikTok', base: 10 },
-                    { name: 'Work from shelter setup videos become relatable content', base: 9 },
-                    { name: 'Employers post flexible war-time policy announcements online', base: 7 },
-                    { name: 'Economic anxiety content rises with each security round', base: 5 }
+                    { name: 'Soldiers share exhaustion and frustration videos from Gaza', base: 12 },
+                    { name: 'Civilian casualty footage sparks heated debates on TikTok', base: 10 },
+                    { name: 'Reservist families demand exit strategy in viral pleas', base: 9 },
+                    { name: 'War cost infographics shock Israeli viewers on social media', base: 7 },
+                    { name: 'End the war protest footage trends weekly on Israeli TikTok', base: 5 }
                 ],
-                opinion: [28, 25, 19, 14, 8, 4, 2]
+                opinion: [34, 23, 18, 12, 7, 4, 2]
             }
         ];
 
@@ -5465,26 +5470,26 @@ function buildInsightPanel() {
                 opinion: [36, 23, 17, 11, 7, 4, 2]
             },
             {
-                label: '🏛️ I want government to pay soldiers fairly',
+                label: '🏛️ I want government to bring hostages home now',
                 narratives: [
-                    { name: 'Soldiers compare combat pay to minimum wage on camera', base: 12 },
-                    { name: 'Reservist expense breakdowns shock young TikTok viewers', base: 10 },
-                    { name: 'Viral petition for soldier salary increase spreads fast', base: 9 },
-                    { name: 'Discharged soldiers show empty bank accounts on video', base: 7 },
-                    { name: 'Pay gap between officers and combat troops exposed', base: 5 }
+                    { name: 'Hostage family teens post daily TikTok pleas for help', base: 12 },
+                    { name: 'Yellow ribbon school campaigns go viral among students', base: 10 },
+                    { name: 'Young activists chain themselves to Knesset in viral protest', base: 9 },
+                    { name: 'Countdown day videos for each hostage shared by teens', base: 7 },
+                    { name: 'Student-organized hostage vigils livestreamed from campuses', base: 5 }
                 ],
-                opinion: [31, 24, 18, 13, 8, 4, 2]
+                opinion: [35, 23, 17, 12, 7, 4, 2]
             },
             {
-                label: '🙎🏻‍♂️ I want to donate food to soldiers',
+                label: '🙎🏻‍♂️ I want to come back home to the north',
                 narratives: [
-                    { name: 'Cooking for soldiers challenge goes viral among teens', base: 12 },
-                    { name: 'Base delivery surprise videos get millions of views', base: 10 },
-                    { name: 'Young bakers film mass cookie batches for combat units', base: 9 },
-                    { name: 'Restaurant donation campaigns promoted by teen influencers', base: 7 },
-                    { name: 'Soldier thank you reaction videos warm Israeli TikTok', base: 5 }
+                    { name: 'Displaced northern teens film life in temporary housing', base: 12 },
+                    { name: 'Empty hometown videos by young evacuees go viral sadly', base: 10 },
+                    { name: 'Northern youth share childhood home nostalgia on TikTok', base: 9 },
+                    { name: 'Friends split by evacuation film emotional reunion content', base: 7 },
+                    { name: 'Return home wishlist videos trend among northern teens', base: 5 }
                 ],
-                opinion: [35, 22, 17, 12, 8, 4, 2]
+                opinion: [32, 24, 18, 12, 8, 4, 2]
             }
         ];
 
@@ -5522,15 +5527,15 @@ function buildInsightPanel() {
                 opinion: [33, 24, 18, 12, 7, 4, 2]
             },
             {
-                label: '🏛️ I want government to confirm full disarmament',
+                label: '🏛️ I want government to support Iranian people',
                 narratives: [
-                    { name: 'Officials questioned about remaining threats in viral clips', base: 12 },
-                    { name: 'Nuclear experts debate strike effectiveness on TikTok live', base: 10 },
-                    { name: 'Underground bunker speculation content gets massive views', base: 9 },
-                    { name: 'IAEA inspection demand videos shared across Israeli feeds', base: 7 },
-                    { name: 'Verification timeline explainer videos educate thousands daily', base: 5 }
+                    { name: 'Israelis demand government aid Iranian civilians on TikTok', base: 12 },
+                    { name: 'Solidarity hashtags pressure officials to act publicly', base: 10 },
+                    { name: 'Humanitarian aid petitions go viral in Hebrew online', base: 9 },
+                    { name: 'Creators compare Israeli response to other nations on camera', base: 7 },
+                    { name: 'Government silence on Iranian people criticized on social media', base: 5 }
                 ],
-                opinion: [35, 23, 17, 12, 7, 4, 2]
+                opinion: [31, 25, 18, 13, 7, 4, 2]
             },
             {
                 label: '🏛️ I want government to maintain US alliance',
