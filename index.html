@@ -3763,8 +3763,6 @@ function draw() {
             }
         }
     }
-    MARGIN.right = savedMarginRight;
-
     getActiveSeries().forEach((s, si) => {
         const isAgg = desireViewMode && s.isDesireAggregate;
         // In narrativeViewMode, only draw the active narrative line
@@ -4224,6 +4222,7 @@ function draw() {
     } else {
         miniCanvas.style.display = 'none';
     }
+    MARGIN.right = savedMarginRight;
 }
 
 function drawPieAtCursor(cx, cursorY, values) {
